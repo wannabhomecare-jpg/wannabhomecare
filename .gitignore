@@ -1,0 +1,17 @@
+# secrets
+.env*
+!.env.example
+
+# deps / build
+/node_modules
+/.next/
+.vercel
+supabase/.temp/
+
+# materials (not committed)
+wannab-materials.zip
+/docs/reference/
+
+# misc
+*.log
+.DS_Store
