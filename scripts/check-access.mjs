@@ -46,14 +46,20 @@ const SECRETS = [VT.value, ST.value].filter((v) => v && v.length >= 8);
 
 // ---------- http (GET only) ----------
 async function get(url, token) {
-  try {
-    const res = await fetch(url, { method: 'GET', headers: { Authorization: `Bearer ${token}`, Accept: 'application/json' } });
-    let body = null;
-    try { body = await res.json(); } catch { /* ignore */ }
-    return { status: res.status, ok: res.ok, body };
-  } catch (e) {
-    return { status: 0, ok: false, body: null, error: String(e.message || e) };
+  let last;
+  for (let i = 0; i < 4; i++) { // 네트워크 끊김·429·5xx 는 다시 시도
+    try {
+      const res = await fetch(url, { method: 'GET', headers: { Authorization: `Bearer ${token}`, Accept: 'application/json' } });
+      let body = null;
+      try { body = await res.json(); } catch { /* ignore */ }
+      last = { status: res.status, ok: res.ok, body };
+      if (res.status !== 429 && res.status < 500) return last;
+    } catch (e) {
+      last = { status: 0, ok: false, body: null, error: String(e.message || e) };
+    }
+    await new Promise((r) => setTimeout(r, 1000 * (i + 1)));
   }
+  return last;
 }
 
 const r = { vercel: {}, supabase: {}, github: {}, git: {} };
@@ -93,6 +99,10 @@ async function checkVercel() {
       projectCount: projects.length,
       otherProjectNames: projects.filter((x) => x.name !== PROJECT).map((x) => x.name),
       existing: mine ? { id: mine.id, linkedRepo: mine.link?.type === 'github' ? `${mine.link.org}/${mine.link.repo}` : null } : null,
+      // 이 저장소에 이미 연결된 프로젝트(이름이 달라도 이 저장소 것이다)
+      thisRepoProjects: projects
+        .filter((x) => x.link?.type === 'github' && `${x.link.org}/${x.link.repo}`.toLowerCase() === String(process.env.GITHUB_REPOSITORY ?? '').toLowerCase())
+        .map((x) => ({ name: x.name, id: x.id })),
     });
   }
   const hobby = v.scopes.filter((s) => String(s.plan).toLowerCase() === 'hobby');
@@ -103,7 +113,14 @@ async function checkVercel() {
   v.gitRepoVisible = '확인 불가';
   v.gitNamespaces = null;
   const repo = process.env.GITHUB_REPOSITORY;
-  if (v.chosen && repo) {
+  if (v.chosen?.thisRepoProjects?.length) {
+    v.gitRepoVisible = '예(이 저장소에 연결된 프로젝트가 있음)';
+    // 그 프로젝트의 최근 Git 배포 상태와 커밋 작성자(로그인 이름만)
+    const pid = v.chosen.thisRepoProjects[0].id;
+    const d = await get(`${V}/v6/deployments?limit=5&projectId=${pid}&teamId=${v.chosen.id}`, VT.value);
+    if (d.ok) v.recentGitDeploys = (d.body?.deployments ?? []).filter((x) => x.meta?.githubCommitAuthorLogin)
+      .map((x) => ({ state: x.state, author: x.meta.githubCommitAuthorLogin }));
+  } else if (v.chosen && repo) {
     const [owner, name] = repo.split('/');
     const ns = await get(`${V}/v1/integrations/git-namespaces?provider=github&teamId=${v.chosen.id}`, VT.value);
     if (ns.ok && Array.isArray(ns.body)) {
@@ -235,6 +252,8 @@ function render() {
     L.push(`| 고른 범위 | ${v.chosen ? `${v.chosen.name} (Hobby${v.hobbyCount > 1 ? `, Hobby 팀 ${v.hobbyCount}개 중 첫 번째` : ''})` : 'Hobby 범위 없음'} |`);
     L.push(`| ${PROJECT} | ${v.scopes.some((x) => x.existing) ? '있음' : '없음'} |`);
     L.push(`| GitHub 연동으로 이 저장소 보기 | ${v.gitRepoVisible} |`);
+    for (const sc of v.scopes) for (const tp of sc.thisRepoProjects ?? []) L.push(`| 이 저장소에 연결된 프로젝트 | ${tp.name} (${sc.name}) |`);
+    if (v.recentGitDeploys?.length) L.push(`| 최근 Git 배포 | ${v.recentGitDeploys.map((x) => `${x.state}(${x.author})`).join(', ')} |`);
     if (showNames && v.gitNamespaces) L.push(`| 연동된 GitHub 계정·조직 | ${v.gitNamespaces.join(', ')} |`);
   }
   L.push('\n## Supabase');
