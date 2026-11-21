@@ -53,7 +53,6 @@ export async function HeroV2() {
             <ContactAction
               href={phone ? `tel:${phone.tel}` : null}
               preview={IS_PREVIEW}
-              ariaLabel={phone ? `전화 상담 ${phone.display}` : "전화 상담"}
               className="block w-full rounded-xl border border-white/25 bg-white/5 px-3 py-2.5 text-center transition hover:bg-white/10"
             >
               <span className="block text-xs font-bold tracking-wider text-brand-200">전화 상담</span>

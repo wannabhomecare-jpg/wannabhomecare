@@ -28,8 +28,8 @@ export const DEFAULT_HERO_SLIDES: HeroSlideData[] = [
     image: "/photos/hero-1-window.webp",
     alt: "거실 창틀의 시공 먼지를 닦는 청소 직원",
     layout: "cover",
-    mobile: { position: "62% 22%", scale: 1 },
-    desktop: { position: "60% 18%", scale: 1 },
+    mobile: { position: "left 20%", scale: 1.44, origin: "left 10%" },
+    desktop: { position: "left 30%", scale: 1.18, origin: "left 0%" },
   },
   {
     service: "aircon",
@@ -42,7 +42,7 @@ export const DEFAULT_HERO_SLIDES: HeroSlideData[] = [
     image: "/photos/service-2-aircon.webp",
     alt: "벽걸이 에어컨에 세척 커버를 씌우고 안쪽을 세척하는 직원",
     layout: "right",
-    mobile: { position: "68% 30%", scale: 1 },
+    mobile: { position: "0% 25%", scale: 1 },
     desktop: { position: "center 30%", scale: 1 },
   },
   {
@@ -70,7 +70,7 @@ export const DEFAULT_HERO_SLIDES: HeroSlideData[] = [
     image: "/photos/service-4-grout.webp",
     alt: "욕실 바닥 타일 틈에 줄눈제를 채우는 손",
     layout: "right",
-    mobile: { position: "70% 40%", scale: 1 },
+    mobile: { position: "center 40%", scale: 1.25, origin: "right 0%" },
     desktop: { position: "center 40%", scale: 1 },
   },
   {
@@ -98,7 +98,7 @@ export const DEFAULT_HERO_SLIDES: HeroSlideData[] = [
     image: "/photos/service-6-newhome.webp",
     alt: "보호복을 입고 방 안에 안개를 분사하는 작업자",
     layout: "right",
-    mobile: { position: "70% 30%", scale: 1 },
+    mobile: { position: "center", scale: 1.3, origin: "right 35%" },
     desktop: { position: "center", scale: 1 },
   },
 ];

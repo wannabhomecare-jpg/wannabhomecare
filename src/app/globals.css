@@ -233,3 +233,27 @@ body {
     scroll-behavior: auto !important;
   }
 }
+
+/* Reveal 묶음: 안의 칸이 차례로 떠오른다(기반 움직임 그대로) */
+.reveal-group .reveal-item {
+  opacity: 0;
+  transform: var(--reveal-from);
+  transition:
+    opacity 0.6s cubic-bezier(0.16, 1, 0.3, 1),
+    transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.reveal-group[data-reveal="show"] .reveal-item {
+  opacity: 1;
+  transform: none;
+}
+.reveal-group[data-reveal="show"] .reveal-item:nth-child(2) { transition-delay: calc(var(--stagger) * 1); }
+.reveal-group[data-reveal="show"] .reveal-item:nth-child(3) { transition-delay: calc(var(--stagger) * 2); }
+.reveal-group[data-reveal="show"] .reveal-item:nth-child(4) { transition-delay: calc(var(--stagger) * 3); }
+.reveal-group[data-reveal="show"] .reveal-item:nth-child(5) { transition-delay: calc(var(--stagger) * 4); }
+.reveal-group[data-reveal="show"] .reveal-item:nth-child(6) { transition-delay: calc(var(--stagger) * 5); }
+@media (prefers-reduced-motion: reduce) {
+  .reveal-group .reveal-item {
+    opacity: 1;
+    transform: none;
+  }
+}

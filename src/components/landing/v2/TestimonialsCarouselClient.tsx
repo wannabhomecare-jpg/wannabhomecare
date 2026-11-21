@@ -60,7 +60,7 @@ export function TestimonialsCarouselClient({ children, label }: { children: Reac
       aria-roledescription="carousel"
       aria-label={label}
     >
-      <div ref={trackRef} className="hide-scrollbar flex snap-x snap-mandatory gap-3 overflow-x-auto scroll-smooth pb-2 sm:gap-5">
+      <div ref={trackRef} tabIndex={0} aria-label={`${label} 목록`} role="group" className="hide-scrollbar focus-visible:outline-2 focus-visible:outline-brand-600 flex snap-x snap-mandatory gap-3 overflow-x-auto scroll-smooth pb-2 sm:gap-5">
         {items.map((child, i) => (
           <div
             key={i}
@@ -94,7 +94,7 @@ export function TestimonialsCarouselClient({ children, label }: { children: Reac
       )}
 
       {pages > 1 && (
-        <div className="mt-4 flex items-center justify-center gap-1.5">
+        <div className="mt-3 flex items-center justify-center">
           {Array.from({ length: pages }).map((_, i) => (
             <button
               key={i}
@@ -102,8 +102,10 @@ export function TestimonialsCarouselClient({ children, label }: { children: Reac
               onClick={() => scrollTo(i)}
               aria-label={`${i + 1}번째로 이동`}
               aria-current={i === index}
-              className={`h-2 rounded-full transition-all ${i === index ? "w-6 bg-brand-600" : "w-2 bg-brand-300"}`}
-            />
+              className="flex h-6 items-center px-1"
+            >
+              <span className={`block h-2 rounded-full transition-all ${i === index ? "w-6 bg-brand-600" : "w-2 bg-brand-300"}`} />
+            </button>
           ))}
         </div>
       )}

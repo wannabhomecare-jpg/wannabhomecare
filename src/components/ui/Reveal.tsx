@@ -1,83 +1,78 @@
 "use client";
 
-import { useRef } from "react";
-import {
-  motion,
-  useInView,
-  useReducedMotion,
-  type Variants,
-} from "framer-motion";
-import type { ReactNode } from "react";
+import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
 
+/**
+ * 화면에 들어오면 떠오르며 나타나는 효과(기반 Reveal 의 움직임 그대로: 아래 60px · 0.93배 → 제자리, 0.7초).
+ * 라이브러리 없이 IntersectionObserver + CSS 로 한다. 화면 밖으로 나가면 다시 숨는다(기반과 같음).
+ * 움직임 줄이기 설정이면 처음부터 보인다.
+ */
 type Variant = "up" | "fade" | "scale" | "left" | "right";
 
-type Props = {
-  children: ReactNode;
-  variant?: Variant;
-  delay?: number;
-  duration?: number;
-  threshold?: number;
-  className?: string;
+const HIDDEN: Record<Variant, string> = {
+  up: "translateY(60px) scale(0.93)",
+  fade: "translateY(16px)",
+  scale: "translateY(30px) scale(0.75)",
+  left: "translateX(-80px) scale(0.95)",
+  right: "translateX(80px) scale(0.95)",
 };
+const EASE = "cubic-bezier(0.16, 1, 0.3, 1)";
 
-const VARIANTS: Record<Variant, Variants> = {
-  up: {
-    hidden: { opacity: 0, y: 60, scale: 0.93 },
-    show: { opacity: 1, y: 0, scale: 1 },
-  },
-  fade: {
-    hidden: { opacity: 0, y: 16 },
-    show: { opacity: 1, y: 0 },
-  },
-  scale: {
-    hidden: { opacity: 0, scale: 0.75, y: 30 },
-    show: { opacity: 1, scale: 1, y: 0 },
-  },
-  left: {
-    hidden: { opacity: 0, x: -80, scale: 0.95 },
-    show: { opacity: 1, x: 0, scale: 1 },
-  },
-  right: {
-    hidden: { opacity: 0, x: 80, scale: 0.95 },
-    show: { opacity: 1, x: 0, scale: 1 },
-  },
-};
+function useInViewState(threshold = 0.15) {
+  const ref = useRef<HTMLDivElement>(null);
+  const [inView, setInView] = useState(false);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches || !("IntersectionObserver" in window)) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- 움직임 없이 바로 보이게
+      setInView(true);
+      return;
+    }
+    const io = new IntersectionObserver(([e]) => setInView(e.isIntersecting), {
+      threshold,
+      rootMargin: "0px 0px -30px 0px",
+    });
+    io.observe(el);
+    return () => io.disconnect();
+  }, [threshold]);
+  return { ref, inView };
+}
+
+function style(variant: Variant, show: boolean, duration: number, delay: number): CSSProperties {
+  return {
+    opacity: show ? 1 : 0,
+    transform: show ? "none" : HIDDEN[variant],
+    transition: `opacity ${duration}s ${EASE} ${delay}s, transform ${duration}s ${EASE} ${delay}s`,
+  };
+}
 
 export function Reveal({
   children,
   variant = "up",
   delay = 0,
   duration = 0.7,
-  threshold = -30,
   className,
-}: Props) {
-  const reduce = useReducedMotion();
-  const ref = useRef(null);
-  const isInView = useInView(ref, {
-    once: false,
-    margin: `0px 0px ${threshold}px 0px`,
-    amount: 0.15,
-  });
-
-  // 움직임 줄이기 설정이면 같은 요소를 그대로 두고 바로 보이게 한다(구조가 바뀌면 화면이 숨은 채로 남는다)
+}: {
+  children: ReactNode;
+  variant?: Variant;
+  delay?: number;
+  duration?: number;
+  threshold?: number;
+  className?: string;
+}) {
+  const { ref, inView } = useInViewState();
   return (
-    <motion.div
-      ref={ref}
-      variants={VARIANTS[variant]}
-      initial="hidden"
-      animate={reduce || isInView ? "show" : "hidden"}
-      transition={reduce ? { duration: 0 } : { duration, delay, ease: [0.16, 1, 0.3, 1] }}
-      className={className}
-    >
+    <div ref={ref} className={`motion-reduce:!transform-none motion-reduce:!opacity-100 ${className ?? ""}`} style={style(variant, inView, duration, delay)}>
       {children}
-    </motion.div>
+    </div>
   );
 }
 
+/** 묶음: 안의 RevealItem 들이 차례로(stagger) 나타난다 */
 export function RevealGroup({
   children,
   stagger = 0.1,
-  threshold = -30,
   className,
 }: {
   children: ReactNode;
@@ -85,47 +80,23 @@ export function RevealGroup({
   threshold?: number;
   className?: string;
 }) {
-  const reduce = useReducedMotion();
-  const ref = useRef(null);
-  const isInView = useInView(ref, {
-    once: false,
-    margin: `0px 0px ${threshold}px 0px`,
-    amount: 0.1,
-  });
-
+  const { ref, inView } = useInViewState(0.1);
   return (
-    <motion.div
+    <div
       ref={ref}
-      initial="hidden"
-      animate={reduce || isInView ? "show" : "hidden"}
-      variants={{
-        hidden: {},
-        show: { transition: { staggerChildren: reduce ? 0 : stagger } },
-      }}
-      className={className}
+      data-reveal={inView ? "show" : "hidden"}
+      className={`reveal-group ${className ?? ""}`}
+      style={{ ["--stagger" as string]: `${stagger}s` }}
     >
       {children}
-    </motion.div>
+    </div>
   );
 }
 
-export function RevealItem({
-  children,
-  variant = "up",
-  className,
-}: {
-  children: ReactNode;
-  variant?: Variant;
-  className?: string;
-}) {
-  const reduce = useReducedMotion();
+export function RevealItem({ children, variant = "up", className }: { children: ReactNode; variant?: Variant; className?: string }) {
   return (
-    <motion.div
-      variants={VARIANTS[variant]}
-      transition={reduce ? { duration: 0 } : { duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
-      className={className}
-    >
+    <div className={`reveal-item ${className ?? ""}`} style={{ ["--reveal-from" as string]: HIDDEN[variant] }}>
       {children}
-    </motion.div>
+    </div>
   );
 }

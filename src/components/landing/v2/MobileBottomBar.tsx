@@ -28,7 +28,6 @@ export function MobileBottomBar() {
         <ContactAction
           href={phone ? `tel:${phone.tel}` : null}
           preview={IS_PREVIEW}
-          ariaLabel={phone ? `바로연결 ${phone.display}` : "바로연결"}
           className={`${btn} w-full bg-brand-600 text-white`}
         >
           <Phone aria-hidden className="size-5" strokeWidth={2.25} />

@@ -70,7 +70,6 @@ export function FloatingDesktop({
       <ContactAction
         href={phone ? `tel:${phone.tel}` : null}
         preview={preview}
-        ariaLabel={phone ? `바로연결 ${phone.display}` : "바로연결"}
         className="flex w-24 flex-col items-center gap-1 rounded-2xl bg-brand-600 px-2 py-3 text-white shadow-lg hover:bg-brand-700"
       >
         <Phone aria-hidden className="size-6" strokeWidth={2.25} />

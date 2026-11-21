@@ -5,12 +5,12 @@ import {
   EXTRA_SERVICES,
   isStepComplete,
   pruneAnswers,
-  quotePayloadSchema,
   QUOTE_SERVICES,
   stepsFor,
   boardServiceLabel,
   maskName,
 } from "../src/lib/quote";
+import { quotePayloadSchema } from "../src/lib/quote-schema";
 
 test("1번 선택지에 컬비청소가 없고, 8번에만 있다", () => {
   assert.deepEqual([...QUOTE_SERVICES], ["clean", "aircon", "grout", "coating", "newhome"]);

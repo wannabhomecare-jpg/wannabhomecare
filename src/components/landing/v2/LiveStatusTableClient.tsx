@@ -149,6 +149,7 @@ export function LiveStatusTableClient({ initial, demo, live: initialLive, rows =
           return (
             <li
               key={item.id}
+              data-row-id={item.id}
               data-just-added={item.id === justAddedId ? "true" : "false"}
               data-status-changed={item.id === changedRowId ? "true" : "false"}
               className="flex min-h-[58px] shrink-0 items-center lg:min-h-[52px]"

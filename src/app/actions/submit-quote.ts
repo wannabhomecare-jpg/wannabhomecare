@@ -1,7 +1,8 @@
 "use server";
 
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
-import { formatPhone, quotePayloadSchema } from "@/lib/quote";
+import { formatPhone } from "@/lib/quote";
+import { quotePayloadSchema } from "@/lib/quote-schema";
 import { isValidRegion } from "@/lib/regions-kr";
 import { hit } from "@/lib/rate-limit";
 import { headers } from "next/headers";

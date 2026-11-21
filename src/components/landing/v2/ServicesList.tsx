@@ -51,7 +51,6 @@ export async function ServicesList() {
             <RevealItem key={s.key} variant="up">
               <QuoteLink
                 service={s.key}
-                ariaLabel={`${s.name} 견적 문의하기`}
                 className="group block h-full overflow-hidden rounded-xl border border-slate-200 bg-white shadow-[0_10px_35px_rgb(15_23_42/0.07)] transition-all duration-300 hover:-translate-y-1 hover:border-brand-200 hover:shadow-[0_20px_45px_rgb(15_23_42/0.13)] sm:rounded-[1.35rem]"
               >
                 <div className="relative aspect-[16/10] overflow-hidden bg-brand-100">

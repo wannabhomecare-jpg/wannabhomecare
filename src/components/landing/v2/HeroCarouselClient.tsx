@@ -179,7 +179,7 @@ export function HeroCarouselClient({ slides, intervalMs = 4000 }: Props) {
         <ChevronRight aria-hidden className="size-6" strokeWidth={2.25} />
       </button>
 
-      <div className="absolute inset-x-0 bottom-3 flex items-center justify-center gap-2 sm:bottom-6">
+      <div className="absolute inset-x-0 bottom-1 flex items-center justify-center sm:bottom-4">
         {slides.map((s, i) => (
           <button
             key={i}
@@ -187,8 +187,10 @@ export function HeroCarouselClient({ slides, intervalMs = 4000 }: Props) {
             onClick={() => goTo(i)}
             aria-label={`${i + 1}번째 장 보기`}
             aria-current={i === idx}
-            className={`h-2 rounded-full transition-all ${i === idx ? "w-6 bg-white" : "w-2 bg-white/50 hover:bg-white/80"}`}
-          />
+            className="group flex h-6 items-center px-1"
+          >
+            <span className={`block h-2 rounded-full transition-all ${i === idx ? "w-6 bg-white" : "w-2 bg-white/50 group-hover:bg-white/80"}`} />
+          </button>
         ))}
       </div>
     </div>

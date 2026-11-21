@@ -407,7 +407,6 @@ export function QuoteWizard({ hints, phone, kakaoUrl, preview }: Props) {
           <ContactAction
             href={phone ? `tel:${phone.tel}` : null}
             preview={preview}
-            ariaLabel={phone ? `전화 ${phone.display}` : "전화 상담"}
             className="flex h-12 w-full items-center justify-center gap-2 rounded-xl border border-white/30 text-base font-extrabold text-white hover:bg-white/10"
           >
             <Phone aria-hidden className="size-5" strokeWidth={2.25} />
