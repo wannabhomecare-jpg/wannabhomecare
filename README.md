@@ -16,7 +16,10 @@ npm run dev                  # http://localhost:3000
 | `npm run lint` | ESLint |
 | `npm run typecheck` | TypeScript 검사 |
 | `npm run build` | `next build` (환경변수 없이도 통과) |
-| `npm test` | 단위·보안 테스트 |
+| `npm test` | 단위·저장소 검사·개인정보 보호 테스트(.env.local 이 있으면 실제 DB 로 확인) |
+| `npm run test:e2e` | 30초 무료 견적 세 가지 길을 화면으로 제출·관리자 확인·정리(`BASE_URL`) |
+| `node tests/e2e/qa.mjs` | 폭별 화면·링크·메뉴·접근성 점검(`BASE_URL`) |
+| `npm run build:assets` | 로고·사진을 사이트용 파일로 만든다 |
 | `npm run check:launch` | 오픈 전 점검. 미리보기 단계·빈 연락처·자리표시가 남아 있으면 실패 |
 
 ## 배포
