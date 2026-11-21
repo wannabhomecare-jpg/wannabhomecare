@@ -1,48 +1,52 @@
 "use server";
 
+import { z } from "zod";
+import { revalidatePath } from "next/cache";
 import { assertAdmin } from "@/lib/auth";
 import { setSiteContent } from "@/lib/site-content";
-import { revalidatePath } from "next/cache";
-import type {
-  AboutCardData,
-  MasterSectionData,
-  TimeSectionData,
-  EquipmentData,
-  ServiceData,
-} from "@/types/database";
+import { SERVICE_KEYS } from "@/lib/services";
 
-export async function saveAboutCards(items: AboutCardData[]) {
+type Result = { ok: true } | { ok: false; error: string };
+
+const promiseSchema = z.object({
+  kicker: z.string().trim().min(1).max(40),
+  title: z.string().trim().min(1).max(120),
+  cards: z
+    .array(
+      z.object({
+        key: z.string().trim().min(1).max(30),
+        icon: z.enum(["map", "shield", "none"]),
+        visualText: z.string().trim().max(10).optional(),
+        body: z.string().trim().min(1).max(200),
+        bodyMobile: z.string().trim().max(200).optional(),
+        title: z.string().trim().min(1).max(40),
+      }),
+    )
+    .length(3),
+});
+
+export async function savePromise(data: unknown): Promise<Result> {
   await assertAdmin();
-  await setSiteContent("about_cards", items);
+  const parsed = promiseSchema.safeParse(data);
+  if (!parsed.success) return { ok: false, error: "입력값을 확인해 주세요." };
+  await setSiteContent("promise_section", parsed.data);
   revalidatePath("/");
+  return { ok: true };
 }
 
-export async function saveMasterSection(data: MasterSectionData) {
-  await assertAdmin();
-  await setSiteContent("master_section", data);
-  revalidatePath("/");
-}
+const servicesSchema = z.array(
+  z.object({
+    key: z.enum(SERVICE_KEYS),
+    name: z.string().trim().min(1).max(20),
+    summary: z.string().trim().min(1).max(60),
+  }),
+);
 
-export async function saveTimeSection(data: TimeSectionData) {
+export async function saveServices(data: unknown): Promise<Result> {
   await assertAdmin();
-  await setSiteContent("time_section", data);
+  const parsed = servicesSchema.safeParse(data);
+  if (!parsed.success) return { ok: false, error: "입력값을 확인해 주세요." };
+  await setSiteContent("services", parsed.data);
   revalidatePath("/");
-}
-
-export async function saveEquipment(items: EquipmentData[]) {
-  await assertAdmin();
-  await setSiteContent("equipment", items);
-  revalidatePath("/");
-}
-
-export async function saveServicesLeak(items: ServiceData[]) {
-  await assertAdmin();
-  await setSiteContent("services_leak", items);
-  revalidatePath("/");
-}
-
-export async function saveServicesPipe(items: ServiceData[]) {
-  await assertAdmin();
-  await setSiteContent("services_pipe", items);
-  revalidatePath("/");
+  return { ok: true };
 }

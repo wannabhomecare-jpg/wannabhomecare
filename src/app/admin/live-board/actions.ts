@@ -1,12 +1,16 @@
 "use server";
 
+import { z } from "zod";
+import { revalidatePath } from "next/cache";
 import { assertAdmin } from "@/lib/auth";
 import { setSiteContent } from "@/lib/site-content";
-import { revalidatePath } from "next/cache";
-import type { DemoRequestData } from "@/types/database";
 
-export async function saveDemoBoard(items: DemoRequestData[]) {
+export async function saveLiveBoardEnabled(enabled: boolean): Promise<{ ok: boolean }> {
   await assertAdmin();
-  await setSiteContent("live_board_demo", items);
+  const v = z.boolean().safeParse(enabled);
+  if (!v.success) return { ok: false };
+  await setSiteContent("live_board", { enabled: v.data });
   revalidatePath("/");
+  revalidatePath("/admin/live-board");
+  return { ok: true };
 }

@@ -2,50 +2,43 @@ import Image from "next/image";
 import Link from "next/link";
 import { BUSINESS } from "@/lib/business";
 
-type Size = "sm" | "md" | "lg";
+type Variant = "horizontal-white" | "horizontal" | "vertical-white";
 
-const SIZES: Record<Size, { img: number; text: string }> = {
-  sm: { img: 32, text: "text-sm" },
-  md: { img: 48, text: "text-base" },
-  lg: { img: 64, text: "text-xl" },
+const FILES: Record<Variant, { src: string; w: number; h: number }> = {
+  "horizontal-white": { src: "/logo/logo-horizontal-white.svg", w: 1232.6, h: 240.8 },
+  horizontal: { src: "/logo/logo-horizontal.svg", w: 1232.6, h: 240.8 },
+  "vertical-white": { src: "/logo/logo-vertical-white.svg", w: 877.5, h: 638 },
 };
 
 /**
- * 사이트 로고 — Image + 상호명.
- *
- * @param size  헤더(md) / 푸터(sm) / 랜딩 강조(lg)
- * @param textClass  텍스트 색·강조 변형 (어두운 배경에선 brand-300 등)
- * @param hideTextOnMobile  모바일에서 텍스트만 숨김 (로고 이미지는 노출)
+ * 로고 — materials/logo 의 SVG 를 그대로 쓴다(색·비율·모양을 바꾸지 않는다).
+ * height 만 정하면 너비는 비율대로 정해진다.
  */
 export function Logo({
-  size = "md",
-  textClass = "text-brand-700",
-  hideTextOnMobile = false,
+  variant = "horizontal-white",
+  height = 40,
+  imgClassName = "",
+  priority = false,
 }: {
-  size?: Size;
-  textClass?: string;
-  hideTextOnMobile?: boolean;
+  variant?: Variant;
+  height?: number;
+  /** 폭별 높이를 바꿀 때(예: "h-[30px] md:h-[34px] w-auto") */
+  imgClassName?: string;
+  priority?: boolean;
 }) {
-  const s = SIZES[size];
+  const f = FILES[variant];
+  const width = Math.round((f.w / f.h) * height);
   return (
-    <Link
-      href="/"
-      className="inline-flex items-center gap-2"
-      aria-label={`${BUSINESS.name} 홈으로`}
-    >
+    <Link href="/" className="inline-flex shrink-0 items-center" aria-label={`${BUSINESS.name} 홈으로`}>
       <Image
-        src="/logo.png"
-        alt=""
-        width={s.img}
-        height={s.img}
-        priority
-        className="rounded-md"
+        src={f.src}
+        alt={BUSINESS.name}
+        width={width}
+        height={height}
+        priority={priority}
+        unoptimized
+        className={imgClassName}
       />
-      <span
-        className={`font-extrabold tracking-tight ${s.text} ${textClass} ${hideTextOnMobile ? "hidden sm:inline" : ""}`}
-      >
-        {BUSINESS.name}
-      </span>
     </Link>
   );
 }

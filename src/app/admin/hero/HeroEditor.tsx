@@ -1,392 +1,150 @@
 "use client";
 
-import { useState, useCallback } from "react";
-import type { HeroBannerData, HeroSlideData } from "@/types/database";
-import { saveHeroBanner, saveHeroSlides } from "./actions";
+import { useState, useTransition } from "react";
+import type { HeroSlideData } from "@/types/database";
+import { saveHeroSlides } from "./actions";
 
-// ============================================================
-// 상태 타입
-// ============================================================
+const PHOTOS = [
+  "/photos/hero-1-window.webp",
+  "/photos/service-1-clean.webp",
+  "/photos/service-2-aircon.webp",
+  "/photos/service-4-grout.webp",
+  "/photos/service-6-newhome.webp",
+];
 
-type SaveStatus = "idle" | "saving" | "saved" | "error";
+const input = "w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm";
+const label = "block text-xs font-bold text-slate-700";
 
-// ============================================================
-// 스타일 상수
-// ============================================================
+const split = (s: string) =>
+  s
+    .split(",")
+    .map((v) => v.trim())
+    .filter(Boolean);
 
-const inputCls =
-  "w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-brand-500 focus:ring-1 focus:ring-brand-500";
-const labelCls = "block text-sm font-semibold text-slate-700 mb-1";
-const primaryBtnCls =
-  "rounded-lg bg-brand-600 px-4 py-2 text-sm font-semibold text-white hover:bg-brand-700 disabled:opacity-50";
-const cardCls = "rounded-xl border border-slate-200 bg-white p-5";
-const dangerBtnCls =
-  "rounded-lg border border-red-300 px-3 py-1.5 text-xs font-semibold text-red-600 hover:bg-red-50";
-const ghostBtnCls =
-  "rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-semibold text-slate-600 hover:bg-slate-50 disabled:opacity-40";
+export function HeroEditor({ initial, defaults }: { initial: HeroSlideData[]; defaults: HeroSlideData[] }) {
+  const [slides, setSlides] = useState(initial);
+  const [msg, setMsg] = useState<string | null>(null);
+  const [pending, start] = useTransition();
 
-// ============================================================
-// 빈 슬라이드 기본값
-// ============================================================
-
-function emptySlide(): HeroSlideData {
-  return {
-    src: "",
-    alt: "",
-    tag: "",
-    tagColor: "",
-    line1: "",
-    line2: "",
-    line2Color: "",
-    sub: "",
-    hashtags: [],
-  };
-}
-
-// ============================================================
-// 저장 상태 버튼 텍스트
-// ============================================================
-
-function statusText(status: SaveStatus, label: string): string {
-  switch (status) {
-    case "saving":
-      return "저장 중...";
-    case "saved":
-      return "저장 완료";
-    case "error":
-      return "오류 발생";
-    default:
-      return label;
-  }
-}
-
-// ============================================================
-// 컴포넌트
-// ============================================================
-
-export function HeroEditor({
-  banner: initialBanner,
-  slides: initialSlides,
-}: {
-  banner: HeroBannerData;
-  slides: HeroSlideData[];
-}) {
-  // --- Banner state ---
-  const [banner, setBanner] = useState<HeroBannerData>(initialBanner);
-  const [bannerStatus, setBannerStatus] = useState<SaveStatus>("idle");
-
-  // --- Slides state ---
-  const [slides, setSlides] = useState<HeroSlideData[]>(initialSlides);
-  const [slidesStatus, setSlidesStatus] = useState<SaveStatus>("idle");
-  const [openIndex, setOpenIndex] = useState<number | null>(null);
-
-  // ========================================
-  // Banner handlers
-  // ========================================
-
-  const handleBannerSave = useCallback(async () => {
-    setBannerStatus("saving");
-    try {
-      await saveHeroBanner(banner);
-      setBannerStatus("saved");
-      setTimeout(() => setBannerStatus("idle"), 2000);
-    } catch {
-      setBannerStatus("error");
-      setTimeout(() => setBannerStatus("idle"), 3000);
-    }
-  }, [banner]);
-
-  // ========================================
-  // Slide helpers
-  // ========================================
-
-  const updateSlide = useCallback(
-    (index: number, patch: Partial<HeroSlideData>) => {
-      setSlides((prev) =>
-        prev.map((s, i) => (i === index ? { ...s, ...patch } : s)),
-      );
-    },
-    [],
-  );
-
-  const moveSlide = useCallback((index: number, direction: -1 | 1) => {
-    setSlides((prev) => {
-      const next = [...prev];
-      const target = index + direction;
-      if (target < 0 || target >= next.length) return prev;
-      [next[index], next[target]] = [next[target], next[index]];
-      return next;
-    });
-    setOpenIndex((prev) => {
-      if (prev === index) return index + direction;
-      return prev;
-    });
-  }, []);
-
-  const removeSlide = useCallback((index: number) => {
-    setSlides((prev) => prev.filter((_, i) => i !== index));
-    setOpenIndex(null);
-  }, []);
-
-  const addSlide = useCallback(() => {
-    setSlides((prev) => [...prev, emptySlide()]);
-    setOpenIndex((prev) => (prev !== null ? prev : slides.length));
-  }, [slides.length]);
-
-  const handleSlidesSave = useCallback(async () => {
-    setSlidesStatus("saving");
-    try {
-      await saveHeroSlides(slides);
-      setSlidesStatus("saved");
-      setTimeout(() => setSlidesStatus("idle"), 2000);
-    } catch {
-      setSlidesStatus("error");
-      setTimeout(() => setSlidesStatus("idle"), 3000);
-    }
-  }, [slides]);
-
-  // ========================================
-  // Render
-  // ========================================
+  const set = (i: number, patch: Partial<HeroSlideData>) =>
+    setSlides((all) => all.map((s, k) => (k === i ? { ...s, ...patch } : s)));
 
   return (
-    <div className="space-y-8">
-      {/* ====== 배너 섹션 ====== */}
-      <section className={cardCls}>
-        <h2 className="text-lg font-bold text-slate-900">배너 문구</h2>
-        <p className="mt-1 text-xs text-slate-500">
-          메인 페이지 최상단에 표시되는 강조 문구입니다.
-        </p>
-
-        <div className="mt-4 space-y-4">
-          <div>
-            <label className={labelCls}>하이라이트</label>
-            <input
-              className={inputCls}
-              value={banner.highlight}
-              onChange={(e) =>
-                setBanner((b) => ({ ...b, highlight: e.target.value }))
-              }
-              placeholder="예: ✨ 신속함과 정직함으로"
-            />
+    <div className="space-y-6">
+      <p className="rounded-xl bg-brand-50 p-4 text-sm text-brand-900">
+        첫 화면 6장의 문구는 고객이 쓴 글자 그대로입니다. 고객 요청이 있을 때만 바꿔 주세요. 사진의 기준점(예:
+        &quot;center 30%&quot;)과 확대 값(1–3)은 얼굴과 일하는 손이 글자에 가려지지 않게 맞추는 값입니다.
+      </p>
+      {slides.map((s, i) => (
+        <fieldset key={i} className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+          <legend className="px-2 text-base font-extrabold text-slate-900">
+            {i + 1}장 · {s.title1}
+          </legend>
+          <div className="grid gap-3 md:grid-cols-2">
+            <label className="md:col-span-2">
+              <span className={label}>세부 항목 버튼(쉼표로 나눔)</span>
+              <input className={input} value={s.chips.join(", ")} onChange={(e) => set(i, { chips: split(e.target.value) })} />
+            </label>
+            <label>
+              <span className={label}>제목 첫 줄</span>
+              <input className={input} value={s.title1} onChange={(e) => set(i, { title1: e.target.value })} />
+            </label>
+            <label>
+              <span className={label}>제목 둘째 줄(없으면 비움)</span>
+              <input className={input} value={s.title2 ?? ""} onChange={(e) => set(i, { title2: e.target.value || undefined })} />
+            </label>
+            <label className="md:col-span-2">
+              <span className={label}>한 줄(없으면 비움)</span>
+              <input className={input} value={s.lead ?? ""} onChange={(e) => set(i, { lead: e.target.value || undefined })} />
+            </label>
+            <label>
+              <span className={label}>슬로건 첫 줄</span>
+              <input className={input} value={s.slogan1} onChange={(e) => set(i, { slogan1: e.target.value })} />
+            </label>
+            <label>
+              <span className={label}>슬로건 둘째 줄</span>
+              <input className={input} value={s.slogan2} onChange={(e) => set(i, { slogan2: e.target.value })} />
+            </label>
+            <label className="md:col-span-2">
+              <span className={label}>해시태그(# 없이, 쉼표로 나눔)</span>
+              <input className={input} value={s.hashtags.join(", ")} onChange={(e) => set(i, { hashtags: split(e.target.value) })} />
+            </label>
+            <label>
+              <span className={label}>사진</span>
+              <select className={input} value={s.image ?? ""} onChange={(e) => set(i, { image: e.target.value || null })}>
+                <option value="">사진 준비 중(자리표시)</option>
+                {PHOTOS.map((p) => (
+                  <option key={p} value={p}>
+                    {p.replace("/photos/", "")}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label>
+              <span className={label}>사진 배치</span>
+              <select className={input} value={s.layout} onChange={(e) => set(i, { layout: e.target.value as HeroSlideData["layout"] })}>
+                <option value="cover">칸에 꽉 채우기</option>
+                <option value="right">오른쪽 78%에 채우기</option>
+              </select>
+            </label>
+            <label className="md:col-span-2">
+              <span className={label}>사진 설명(대체 문구)</span>
+              <input className={input} value={s.alt} onChange={(e) => set(i, { alt: e.target.value })} />
+            </label>
+            {(["mobile", "desktop"] as const).map((k) => (
+              <div key={k} className="grid grid-cols-2 gap-2">
+                <label>
+                  <span className={label}>{k === "mobile" ? "휴대폰" : "PC"} 기준점</span>
+                  <input className={input} value={s[k].position} onChange={(e) => set(i, { [k]: { ...s[k], position: e.target.value } })} />
+                </label>
+                <label>
+                  <span className={label}>{k === "mobile" ? "휴대폰" : "PC"} 확대</span>
+                  <input
+                    type="number"
+                    step="0.05"
+                    min="1"
+                    max="3"
+                    className={input}
+                    value={s[k].scale}
+                    onChange={(e) => set(i, { [k]: { ...s[k], scale: Number(e.target.value) || 1 } })}
+                  />
+                </label>
+              </div>
+            ))}
           </div>
-          <div>
-            <label className={labelCls}>본문</label>
-            <input
-              className={inputCls}
-              value={banner.text}
-              onChange={(e) =>
-                setBanner((b) => ({ ...b, text: e.target.value }))
-              }
-              placeholder="예: 수도권 365일 24시간 누수 출동 전문업체"
-            />
-          </div>
-        </div>
+        </fieldset>
+      ))}
 
-        <div className="mt-5 flex justify-end">
-          <button
-            className={primaryBtnCls}
-            disabled={bannerStatus === "saving"}
-            onClick={handleBannerSave}
-          >
-            {statusText(bannerStatus, "배너 저장")}
-          </button>
-        </div>
-      </section>
-
-      {/* ====== 슬라이드 섹션 ====== */}
-      <section className={cardCls}>
-        <div className="flex items-center justify-between">
-          <div>
-            <h2 className="text-lg font-bold text-slate-900">캐러셀 슬라이드</h2>
-            <p className="mt-1 text-xs text-slate-500">
-              히어로 캐러셀에 표시되는 슬라이드 목록입니다. ({slides.length}개)
-            </p>
-          </div>
-          <button className={primaryBtnCls} onClick={addSlide}>
-            슬라이드 추가
-          </button>
-        </div>
-
-        <ul className="mt-5 space-y-3">
-          {slides.map((slide, idx) => {
-            const isOpen = openIndex === idx;
-            return (
-              <li
-                key={idx}
-                className="rounded-lg border border-slate-200 bg-slate-50"
-              >
-                {/* 헤더 (접기/펼치기) */}
-                <button
-                  type="button"
-                  className="flex w-full items-center justify-between px-4 py-3 text-left"
-                  onClick={() => setOpenIndex(isOpen ? null : idx)}
-                >
-                  <span className="text-sm font-semibold text-slate-800">
-                    #{idx + 1} &mdash; {slide.tag || "(태그 없음)"}
-                  </span>
-                  <span className="text-xs text-slate-400">
-                    {isOpen ? "접기 ▲" : "펼치기 ▼"}
-                  </span>
-                </button>
-
-                {/* 펼친 영역 */}
-                {isOpen && (
-                  <div className="border-t border-slate-200 px-4 pb-4 pt-3">
-                    <div className="grid gap-4 sm:grid-cols-2">
-                      <div>
-                        <label className={labelCls}>이미지 경로 (src)</label>
-                        <input
-                          className={inputCls}
-                          value={slide.src}
-                          onChange={(e) =>
-                            updateSlide(idx, { src: e.target.value })
-                          }
-                          placeholder="/about/dispatch.png"
-                        />
-                      </div>
-                      <div>
-                        <label className={labelCls}>대체 텍스트 (alt)</label>
-                        <input
-                          className={inputCls}
-                          value={slide.alt}
-                          onChange={(e) =>
-                            updateSlide(idx, { alt: e.target.value })
-                          }
-                        />
-                      </div>
-                      <div>
-                        <label className={labelCls}>태그</label>
-                        <input
-                          className={inputCls}
-                          value={slide.tag}
-                          onChange={(e) =>
-                            updateSlide(idx, { tag: e.target.value })
-                          }
-                          placeholder="24시간 긴급출동"
-                        />
-                      </div>
-                      <div>
-                        <label className={labelCls}>태그 색상 (CSS 클래스)</label>
-                        <input
-                          className={inputCls}
-                          value={slide.tagColor}
-                          onChange={(e) =>
-                            updateSlide(idx, { tagColor: e.target.value })
-                          }
-                          placeholder="bg-cyan-500/30 text-cyan-200"
-                        />
-                      </div>
-                      <div>
-                        <label className={labelCls}>라인 1</label>
-                        <input
-                          className={inputCls}
-                          value={slide.line1}
-                          onChange={(e) =>
-                            updateSlide(idx, { line1: e.target.value })
-                          }
-                          placeholder="365일 24시간"
-                        />
-                      </div>
-                      <div>
-                        <label className={labelCls}>라인 2</label>
-                        <input
-                          className={inputCls}
-                          value={slide.line2}
-                          onChange={(e) =>
-                            updateSlide(idx, { line2: e.target.value })
-                          }
-                          placeholder="긴급 출동"
-                        />
-                      </div>
-                      <div>
-                        <label className={labelCls}>라인 2 색상 (CSS 클래스)</label>
-                        <input
-                          className={inputCls}
-                          value={slide.line2Color}
-                          onChange={(e) =>
-                            updateSlide(idx, { line2Color: e.target.value })
-                          }
-                          placeholder="text-yellow-300"
-                        />
-                      </div>
-                      <div>
-                        <label className={labelCls}>서브 텍스트</label>
-                        <input
-                          className={inputCls}
-                          value={slide.sub}
-                          onChange={(e) =>
-                            updateSlide(idx, { sub: e.target.value })
-                          }
-                        />
-                      </div>
-                      <div className="sm:col-span-2">
-                        <label className={labelCls}>
-                          해시태그 (쉼표로 구분)
-                        </label>
-                        <input
-                          className={inputCls}
-                          value={slide.hashtags.join(", ")}
-                          onChange={(e) =>
-                            updateSlide(idx, {
-                              hashtags: e.target.value
-                                .split(",")
-                                .map((t) => t.trim())
-                                .filter(Boolean),
-                            })
-                          }
-                          placeholder="24시간출동, 수도권전지역, 긴급누수"
-                        />
-                      </div>
-                    </div>
-
-                    {/* 슬라이드 액션 버튼 */}
-                    <div className="mt-4 flex items-center gap-2">
-                      <button
-                        className={ghostBtnCls}
-                        disabled={idx === 0}
-                        onClick={() => moveSlide(idx, -1)}
-                      >
-                        위로 이동
-                      </button>
-                      <button
-                        className={ghostBtnCls}
-                        disabled={idx === slides.length - 1}
-                        onClick={() => moveSlide(idx, 1)}
-                      >
-                        아래로 이동
-                      </button>
-                      <div className="flex-1" />
-                      <button
-                        className={dangerBtnCls}
-                        onClick={() => removeSlide(idx)}
-                      >
-                        삭제
-                      </button>
-                    </div>
-                  </div>
-                )}
-              </li>
-            );
-          })}
-        </ul>
-
-        {slides.length === 0 && (
-          <p className="mt-4 text-center text-sm text-slate-400">
-            슬라이드가 없습니다. &ldquo;슬라이드 추가&rdquo; 버튼을 눌러주세요.
-          </p>
+      <div className="sticky bottom-4 flex flex-wrap items-center gap-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-lg">
+        <button
+          type="button"
+          disabled={pending}
+          onClick={() =>
+            start(async () => {
+              const r = await saveHeroSlides(slides);
+              setMsg(r.ok ? "저장했습니다." : r.error);
+            })
+          }
+          className="rounded-lg bg-brand-600 px-5 py-2.5 text-sm font-bold text-white hover:bg-brand-700 disabled:opacity-60"
+        >
+          {pending ? "저장 중…" : "저장"}
+        </button>
+        <button
+          type="button"
+          onClick={() => {
+            setSlides(defaults);
+            setMsg("기본값을 불러왔습니다. 저장을 눌러야 반영됩니다.");
+          }}
+          className="rounded-lg border border-slate-300 px-4 py-2.5 text-sm font-bold text-slate-700"
+        >
+          기본값 불러오기
+        </button>
+        {msg && (
+          <span role="status" className="text-sm font-semibold text-slate-700">
+            {msg}
+          </span>
         )}
-
-        <div className="mt-5 flex justify-end">
-          <button
-            className={primaryBtnCls}
-            disabled={slidesStatus === "saving"}
-            onClick={handleSlidesSave}
-          >
-            {statusText(slidesStatus, "슬라이드 저장")}
-          </button>
-        </div>
-      </section>
+      </div>
     </div>
   );
 }

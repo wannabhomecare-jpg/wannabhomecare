@@ -1,38 +1,15 @@
 import type { MetadataRoute } from "next";
-import { siteConfig } from "@/lib/env";
+import { headers } from "next/headers";
+import { IS_PREVIEW, siteConfig } from "@/lib/env";
 
-export default function robots(): MetadataRoute.Robots {
-  // non-production은 전체 색인 차단
-  const isProd = process.env.VERCEL_ENV
-    ? process.env.VERCEL_ENV === "production"
-    : process.env.NODE_ENV === "production";
-  if (!isProd) {
+/** 미리보기 단계와 *.vercel.app 주소는 전체 차단. 오픈 단계의 실제 도메인만 연다. */
+export default async function robots(): Promise<MetadataRoute.Robots> {
+  const host = (await headers()).get("host") ?? "";
+  if (IS_PREVIEW || host.endsWith(".vercel.app")) {
     return { rules: { userAgent: "*", disallow: "/" } };
   }
-
-  const sharedDisallow = ["/admin", "/admin/", "/admin/*", "/api/", "/api/*"];
-
   return {
-    rules: [
-      // 기본 모든 봇
-      {
-        userAgent: "*",
-        allow: "/",
-        disallow: sharedDisallow,
-      },
-      // 네이버 봇 — 명시적으로 같은 정책 적용 (서치어드바이저 인지 향상)
-      {
-        userAgent: "Yeti",
-        allow: "/",
-        disallow: sharedDisallow,
-      },
-      // 구글 봇 — 명시 (이미 *로 커버되지만 일부 봇이 첫 매칭만 보는 경우 대비)
-      {
-        userAgent: "Googlebot",
-        allow: "/",
-        disallow: sharedDisallow,
-      },
-    ],
+    rules: [{ userAgent: "*", allow: "/", disallow: ["/admin", "/admin/"] }],
     sitemap: `${siteConfig.url}/sitemap.xml`,
     host: siteConfig.url,
   };

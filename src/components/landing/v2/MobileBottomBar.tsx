@@ -1,147 +1,44 @@
-"use client";
-
-import Link from "next/link";
-import { FileText, Phone, Sparkles } from "@/components/icons";
-import { KakaoLogo } from "@/components/icons/BrandLogos";
-import { getContactInfo } from "@/lib/contact";
+import { FileText, Phone } from "@/components/icons";
+import { KakaoBubble } from "@/components/icons/BrandLogos";
+import { ContactAction } from "@/components/common/ContactAction";
+import { QuoteLink } from "@/components/common/QuoteLink";
 import { BUSINESS } from "@/lib/business";
-import { EVENTS, trackEvent } from "@/lib/analytics";
+import { IS_PREVIEW } from "@/lib/env";
 
 /**
- * 모바일 하단 고정 메뉴 (장인배관 톤 — IMG_1314 참고).
- *
- * 5칸 + 각 아이콘 브랜드 컬러:
- *   1) 견적문의 (brand-600 파랑)
- *   2) 작업사례 (emerald-500 초록 thumbs up)
- *   3) 상담하기 (accent 주황 중앙 큰 원, 전화)
- *   4) 최근후기 (홈의 최근 작업사례 후기 섹션)
- *   5) 카톡상담 (카카오 옐로우 로고)
+ * 휴대폰 하단 고정 버튼 3개(고객 요청): 견적문의 · 바로연결 · 카톡상담.
+ * 본문 아래에는 이 높이만큼 여백을 둔다(푸터 pb).
  */
 export function MobileBottomBar() {
-  const { phone } = getContactInfo();
-
+  const phone = BUSINESS.contact.phone;
+  const kakao = BUSINESS.contact.kakao;
+  const btn = "flex h-14 items-center justify-center gap-1.5 rounded-2xl text-[17px] font-extrabold shadow-md";
   return (
     <div
       role="region"
       aria-label="빠른 상담"
-      className="fixed bottom-0 left-0 z-50 w-full border-t border-slate-200 bg-white shadow-[0_-2px_10px_rgba(0,0,0,0.1)] md:hidden"
-      style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
+      className="fixed bottom-0 left-0 z-40 w-full border-t border-slate-200 bg-white/95 px-3 pt-2.5 backdrop-blur md:hidden"
+      style={{ paddingBottom: "max(0.625rem, env(safe-area-inset-bottom))" }}
     >
-      <div className="relative grid h-[68px] grid-cols-5 items-center text-center">
-        {/* 1) 견적문의 */}
-        <Link
-          href="#quote-form"
-          onClick={() =>
-            trackEvent(EVENTS.CTA_CLICK, { cta_label: "mobile_bar_quote" })
-          }
-          className="flex h-full flex-col items-center justify-center gap-0.5 text-slate-800"
-          aria-label="견적 문의"
+      <div className="grid grid-cols-3 gap-2">
+        <QuoteLink className={`${btn} bg-brand-900 text-white`}>
+          <FileText aria-hidden className="size-5" strokeWidth={2.25} />
+          견적문의
+        </QuoteLink>
+        <ContactAction
+          href={phone ? `tel:${phone.tel}` : null}
+          preview={IS_PREVIEW}
+          ariaLabel={phone ? `바로연결 ${phone.display}` : "바로연결"}
+          className={`${btn} w-full bg-brand-600 text-white`}
         >
-          <Sparkles
-            aria-hidden
-            className="size-6 text-brand-600"
-            strokeWidth={2.25}
-          />
-          <span className="text-[10px] font-bold">견적문의</span>
-        </Link>
-
-        {/* 2) 작업사례 */}
-        <Link
-          href="/posts"
-          className="flex h-full flex-col items-center justify-center gap-0.5 text-slate-800"
-          aria-label="작업사례 보기"
-        >
-          <ThumbsUpIcon className="size-6 text-cyan-600" />
-          <span className="text-[10px] font-bold">작업사례</span>
-        </Link>
-
-        {/* 3) 중앙: 큰 전화 */}
-        {phone ? (
-          <a
-            href={`tel:${phone.tel}`}
-            onClick={() =>
-              trackEvent(EVENTS.CLICK_CALL, { cta_label: "mobile_bar_call" })
-            }
-            aria-label={`전화 ${phone.display}로 상담`}
-            className="relative flex h-full flex-col items-center justify-end pb-1.5"
-          >
-            <span
-              aria-hidden
-              className="mobile-center-pulse absolute left-1/2 -top-7 flex size-14 -translate-x-1/2 items-center justify-center rounded-full bg-[#061b35] text-cyan-300 shadow-lg shadow-slate-950/30 ring-4 ring-cyan-300"
-            >
-              <Phone className="size-6" strokeWidth={2.25} aria-hidden />
-            </span>
-            <span className="text-[10px] font-extrabold text-brand-800">
-              상담하기
-            </span>
-          </a>
-        ) : (
-          <Link
-            href="#quote-form"
-            className="relative flex h-full flex-col items-center justify-end pb-1.5"
-            aria-label="무료 견적 신청"
-          >
-            <span
-              aria-hidden
-              className="absolute left-1/2 -top-7 flex size-14 -translate-x-1/2 items-center justify-center rounded-full bg-brand-600 text-white shadow-lg shadow-brand-600/40 ring-4 ring-white"
-            >
-              <Sparkles className="size-6" strokeWidth={2.25} aria-hidden />
-            </span>
-            <span className="text-[10px] font-extrabold text-brand-700">
-              견적신청
-            </span>
-          </Link>
-        )}
-
-        {/* 4) 최근후기 — 홈페이지 안의 최신 사례로 이동 */}
-        <Link
-          href="/#works-cards"
-          onClick={() =>
-            trackEvent(EVENTS.CTA_CLICK, {
-              cta_label: "mobile_bar_recent_works",
-            })
-          }
-          className="flex h-full flex-col items-center justify-center gap-0.5 text-slate-800"
-          aria-label="최근 작업사례 후기 보기"
-        >
-          <FileText aria-hidden className="size-6 text-brand-600" strokeWidth={2.25} />
-          <span className="text-[10px] font-bold">최근후기</span>
-        </Link>
-
-        {/* 5) 카톡상담 — 카카오 로고 */}
-        <a
-          href={BUSINESS.kakaoChatUrl}
-          target="_blank"
-          rel="noopener"
-          onClick={() =>
-            trackEvent(EVENTS.CLICK_KAKAO, { cta_label: "mobile_bar_kakao" })
-          }
-          className="flex h-full flex-col items-center justify-center gap-0.5 text-slate-800"
-          aria-label="카카오톡 상담 새 창으로 열기"
-        >
-          <KakaoLogo aria-hidden className="size-7" />
-          <span className="text-[10px] font-bold">카톡상담</span>
-        </a>
+          <Phone aria-hidden className="size-5" strokeWidth={2.25} />
+          바로연결
+        </ContactAction>
+        <ContactAction href={kakao?.url ?? null} external preview={IS_PREVIEW} className={`${btn} w-full bg-kakao text-kakao-ink`}>
+          <KakaoBubble aria-hidden className="size-5" />
+          카톡상담
+        </ContactAction>
       </div>
     </div>
-  );
-}
-
-function ThumbsUpIcon({ className = "" }: { className?: string }) {
-  return (
-    <svg
-      aria-hidden
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth={2.25}
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      className={className}
-    >
-      <path d="M7 22V11" />
-      <path d="M14 2l-2 9h7a2 2 0 0 1 2 2.4l-1.5 7A2 2 0 0 1 17.6 22H7" />
-      <path d="M3 11h4v11H3z" />
-    </svg>
   );
 }

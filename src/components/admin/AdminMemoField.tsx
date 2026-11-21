@@ -41,7 +41,7 @@ export function AdminMemoField({ id, initial }: { id: string; initial: string })
         <span className="text-xs font-normal text-slate-500">
           {pending && "저장 중..."}
           {!pending && savedAt && "저장됨"}
-          {error && <span className="text-red-600">{error}</span>}
+          {error && <span className="text-live">{error}</span>}
         </span>
       </label>
       <textarea

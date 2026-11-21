@@ -1,96 +1,73 @@
 import Link from "next/link";
 import { Container } from "@/components/ui/Container";
 import { Logo } from "@/components/ui/Logo";
-import { Phone, ArrowLeft } from "@/components/icons";
-import { getContactInfo } from "@/lib/contact";
+import { Phone } from "@/components/icons";
+import { ContactAction } from "@/components/common/ContactAction";
+import { BUSINESS } from "@/lib/business";
+import { IS_PREVIEW } from "@/lib/env";
+import { getServices } from "@/lib/site-content";
 import { MobileMenu } from "./MobileMenu";
 
-const NAV: { href: string; label: string }[] = [
-  { href: "/#about", label: "노모어누수" },
-  { href: "/#services", label: "서비스" },
-  { href: "/posts", label: "작업사례" },
-  { href: "/#reviews", label: "고객후기" },
-  { href: "/faq", label: "자주 묻는 질문" },
-];
-
-type Props = {
-  showBack?: boolean;
-};
-
 /**
- * 사이트 헤더 — 상단 무료상담 띠 + 메인 헤더 2단 구성.
- *
- * 띠: [무료상담] 365일 24시간 상담 가능 · {phone}
- * 메인: [로고+슬로건] [메뉴 6개]   [전화 yellow CTA]
+ * 사이트 헤더 — 상단 띠(PC) + 메인 헤더.
+ * 띠: [무료 견적] 365일 상담 가능 · 대표번호
+ * 메인: [가로 로고 | 한 줄]   [메뉴 6개] [전화]
+ * 카테고리 화면은 Phase 2 에서 만든다. 지금은 메뉴가 모두 서비스 6칸(/#services)으로 간다.
  */
-export function Header({ showBack = false }: Props) {
-  const { phone } = getContactInfo();
+export async function Header() {
+  const services = await getServices();
+  const phone = BUSINESS.contact.phone;
+  const tel = phone ? `tel:${phone.tel}` : null;
 
   return (
-    <header className="sticky top-0 z-30 border-b border-white/10 bg-[#061b35]/95 text-white shadow-[0_8px_30px_rgba(2,12,27,0.18)] backdrop-blur-xl">
-      {/* 상단 무료상담 띠 (PC만) */}
-      {phone && (
-        <div className="hidden border-b border-white/10 bg-[#0a4ba8] text-white md:block">
-          <Container className="flex h-9 items-center justify-center gap-3 text-xs font-bold">
-            <span className="inline-flex items-center gap-1 rounded-full bg-highlight-400 px-2 py-0.5 text-[11px] font-extrabold text-brand-900">
-              무료상담
-            </span>
-            <span className="text-white/90">365일 24시간 상담 가능</span>
-            <span aria-hidden className="text-white/40">·</span>
-            <a
-              href={`tel:${phone.tel}`}
-              className="font-extrabold text-highlight-300 hover:underline"
-            >
-              {phone.display}
-            </a>
-          </Container>
-        </div>
-      )}
-
-      {/* 메인 헤더 */}
-      <Container className="flex h-16 items-center justify-between gap-3">
-        {/* 좌측: 로고 + 슬로건 + (서브페이지) 홈 링크 */}
-        <div className="flex items-center gap-2">
-          <Logo size="md" hideTextOnMobile textClass="text-white" />
-          <span className="hidden border-l border-white/20 pl-3 text-xs font-semibold text-slate-300 lg:inline-block">
-            탐지부터 복구까지, 끝까지 책임집니다
-          </span>
-          {showBack && (
-            <Link
-              href="/"
-              aria-label="메인으로"
-              className="ml-1 hidden items-center gap-0.5 rounded-md px-2 py-1.5 text-sm font-bold text-brand-700 hover:bg-brand-50 sm:inline-flex"
-            >
-              <ArrowLeft aria-hidden className="size-4" strokeWidth={2.25} />
-              <span>홈</span>
-            </Link>
+    <header className="sticky top-0 z-40 bg-brand-900 text-white shadow-[0_8px_30px_rgb(0_0_0/0.12)]">
+      <div className="hidden bg-brand-700 md:block">
+        <Container className="flex h-9 items-center justify-center gap-3 text-[13px] font-bold">
+          <span className="rounded-full bg-white px-2.5 py-0.5 text-xs font-extrabold text-brand-700">무료 견적</span>
+          <span className="text-white">365일 상담 가능</span>
+          {phone && (
+            <>
+              <span aria-hidden className="text-brand-300">
+                ·
+              </span>
+              <a href={`tel:${phone.tel}`} className="font-extrabold text-white hover:underline">
+                {phone.display}
+              </a>
+            </>
           )}
+        </Container>
+      </div>
+
+      <Container className="flex h-14 items-center justify-between gap-3 md:h-[68px]">
+        <div className="flex min-w-0 items-center gap-4">
+          <Logo variant="horizontal-white" height={34} priority imgClassName="h-[30px] w-auto md:h-[34px]" />
+          <span className="hidden border-l border-white/25 pl-4 text-[13px] font-semibold text-brand-200 xl:inline-block">
+            {BUSINESS.tagline}
+          </span>
         </div>
 
-        {/* 우측: 데스크탑 메뉴 + 모바일 햄버거 + 전화 */}
         <nav aria-label="주요 메뉴" className="flex items-center gap-1">
-          <ul className="hidden items-center gap-0.5 lg:flex">
-            {NAV.map((it) => (
-              <li key={it.href}>
+          <ul className="hidden items-center lg:flex">
+            {services.map((s) => (
+              <li key={s.key}>
                 <Link
-                  href={it.href}
-                  className="rounded-lg px-3 py-2 text-sm font-bold text-slate-200 transition hover:bg-white/10 hover:text-white"
+                  href="/#services"
+                  className="rounded-lg px-3 py-2 text-[15px] font-bold whitespace-nowrap text-white transition hover:bg-white/10 xl:px-4"
                 >
-                  {it.label}
+                  {s.name}
                 </Link>
               </li>
             ))}
           </ul>
-          <MobileMenu />
-          {phone && (
-            <a
-              href={`tel:${phone.tel}`}
-              className="ml-2 inline-flex size-10 items-center justify-center rounded-full bg-cyan-400 text-[#061b35] shadow-lg shadow-cyan-500/20 transition hover:bg-cyan-300"
-              aria-label={`전화 ${phone.display}로 상담`}
-            >
-              <Phone aria-hidden className="size-5" strokeWidth={2.5} />
-            </a>
-          )}
+          <MobileMenu items={services.map((s) => ({ key: s.key, name: s.name }))} />
+          <ContactAction
+            href={tel}
+            preview={IS_PREVIEW}
+            ariaLabel={phone ? `전화 ${phone.display}로 상담` : "전화 상담"}
+            className="ml-1 inline-flex size-10 items-center justify-center rounded-full bg-white text-brand-700 shadow-lg transition hover:bg-brand-50 md:ml-3 md:size-11"
+          >
+            <Phone aria-hidden className="size-5" strokeWidth={2.25} />
+          </ContactAction>
         </nav>
       </Container>
     </header>

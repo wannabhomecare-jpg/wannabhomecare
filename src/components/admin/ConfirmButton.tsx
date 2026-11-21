@@ -25,7 +25,7 @@ export function ConfirmButton({
   const base = "inline-flex items-center justify-center rounded-md px-3 py-2 text-sm font-bold transition-colors disabled:opacity-60";
   const cls =
     variant === "danger"
-      ? `${base} bg-red-600 text-white hover:bg-red-700`
+      ? `${base} bg-live text-white hover:brightness-95`
       : `${base} bg-slate-200 text-slate-800 hover:bg-slate-300`;
 
   return (
@@ -50,7 +50,7 @@ export function ConfirmButton({
       >
         {pending ? "처리 중..." : label}
       </button>
-      {error && <p className="text-xs font-semibold text-red-600">{error}</p>}
+      {error && <p className="text-xs font-semibold text-live">{error}</p>}
     </div>
   );
 }

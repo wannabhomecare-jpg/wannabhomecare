@@ -5,6 +5,7 @@ import { RequestFilters } from "@/components/admin/RequestFilters";
 import { StatusBadge } from "@/components/ui/StatusBadge";
 import { BoardVisibilityToggle } from "@/components/admin/BoardVisibilityToggle";
 import { formatDateYMD } from "@/lib/time";
+import { boardServiceLabel } from "@/lib/quote";
 import { STATUS_ORDER, type RequestStatus } from "@/types/database";
 
 export const dynamic = "force-dynamic";
@@ -22,10 +23,6 @@ function parseStatus(v: string | undefined): RequestStatus | null {
   return (STATUS_ORDER as readonly string[]).includes(v) ? (v as RequestStatus) : null;
 }
 
-function summarize(text: string, max = 60): string {
-  const clean = text.replace(/\s+/g, " ").trim();
-  return clean.length <= max ? clean : clean.slice(0, max) + "…";
-}
 
 export default async function AdminRequestsPage({
   searchParams,
@@ -40,10 +37,8 @@ export default async function AdminRequestsPage({
 
   const supabase = createSupabaseAdminClient();
   let query = supabase
-    .from("leak_requests")
-    .select(
-      "id, customer_name, phone, region, symptom, status, visible_on_board, created_at",
-    )
+    .from("quote_requests")
+    .select("id, customer_name, phone, sido, sigungu, service, clean_type, area, status, visible_on_board, created_at")
     .order("created_at", { ascending: order === "oldest" })
     .limit(PER_PAGE);
   if (status) query = query.eq("status", status);
@@ -68,12 +63,12 @@ export default async function AdminRequestsPage({
       <div className="mt-6 hidden overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm md:block">
         <table className="w-full text-sm">
           <thead>
-            <tr className="border-b border-slate-200 bg-slate-50 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
+            <tr className="border-b border-slate-200 bg-slate-50 text-left text-xs font-semibold uppercase tracking-wide text-slate-600">
               <th className="px-4 py-3">시간</th>
               <th className="px-4 py-3">이름</th>
               <th className="px-4 py-3">연락처</th>
               <th className="px-4 py-3">지역</th>
-              <th className="px-4 py-3">증상</th>
+              <th className="px-4 py-3">서비스</th>
               <th className="px-4 py-3">상태</th>
               <th className="px-4 py-3">보드</th>
             </tr>
@@ -81,14 +76,14 @@ export default async function AdminRequestsPage({
           <tbody className="divide-y divide-slate-200">
             {items.length === 0 ? (
               <tr>
-                <td colSpan={7} className="px-4 py-10 text-center text-slate-500">
+                <td colSpan={7} className="px-4 py-10 text-center text-slate-600">
                   해당 조건의 신청이 없습니다.
                 </td>
               </tr>
             ) : (
               items.map((r) => (
                 <tr key={r.id} className="hover:bg-slate-50">
-                  <td className="px-4 py-3 text-xs text-slate-500">{formatDateYMD(r.created_at)}</td>
+                  <td className="px-4 py-3 text-xs text-slate-600">{formatDateYMD(r.created_at)}</td>
                   <td className="px-4 py-3">
                     <Link
                       href={`/admin/requests/${r.id}`}
@@ -98,8 +93,8 @@ export default async function AdminRequestsPage({
                     </Link>
                   </td>
                   <td className="px-4 py-3 text-slate-700">{r.phone}</td>
-                  <td className="px-4 py-3 text-slate-700">{r.region ?? "-"}</td>
-                  <td className="px-4 py-3 text-slate-700">{summarize(r.symptom)}</td>
+                  <td className="px-4 py-3 text-slate-700">{r.sido} {r.sigungu}</td>
+                  <td className="px-4 py-3 text-slate-700">{boardServiceLabel(r.service, r.clean_type)} · {r.area}</td>
                   <td className="px-4 py-3">
                     <StatusBadge status={r.status as RequestStatus} />
                   </td>
@@ -116,7 +111,7 @@ export default async function AdminRequestsPage({
       {/* Mobile: cards */}
       <ul className="mt-6 space-y-3 md:hidden">
         {items.length === 0 ? (
-          <li className="rounded-xl border border-dashed border-slate-300 bg-white py-8 text-center text-sm text-slate-500">
+          <li className="rounded-xl border border-dashed border-slate-300 bg-white py-8 text-center text-sm text-slate-600">
             해당 조건의 신청이 없습니다.
           </li>
         ) : (
@@ -131,11 +126,11 @@ export default async function AdminRequestsPage({
                 </Link>
                 <StatusBadge status={r.status as RequestStatus} />
               </div>
-              <p className="mt-1 text-xs text-slate-500">
+              <p className="mt-1 text-xs text-slate-600">
                 {formatDateYMD(r.created_at)} · {r.phone}
-                {r.region && ` · ${r.region}`}
+                {` · ${r.sido} ${r.sigungu}`}
               </p>
-              <p className="mt-2 text-sm text-slate-700">{summarize(r.symptom, 80)}</p>
+              <p className="mt-2 text-sm text-slate-700">{boardServiceLabel(r.service, r.clean_type)} · {r.area}</p>
               <div className="mt-3 flex justify-end">
                 <BoardVisibilityToggle id={r.id} initial={r.visible_on_board} />
               </div>

@@ -1,28 +1,26 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
-import { Phone, ArrowUp, FileText } from "@/components/icons";
-import { KakaoLogo } from "@/components/icons/BrandLogos";
-import { getContactInfo } from "@/lib/contact";
-import { BUSINESS } from "@/lib/business";
-import { EVENTS, trackEvent } from "@/lib/analytics";
+import { useCallback, useEffect, useState } from "react";
+import { ArrowUp, Phone } from "@/components/icons";
+import { KakaoBubble } from "@/components/icons/BrandLogos";
+import { ContactAction } from "@/components/common/ContactAction";
 
 /**
- * 데스크탑 우측 고정 플로팅 (md+).
- *
- * 위→아래 구성:
- *   1) 앵커 메뉴: 회사소개·서비스·작업사례·후기·문의
- *   2) 전화 (orange, 큰 강조)
- *   3) 카카오톡 오픈채팅 (yellow)
- *   4) 최근 작업사례 후기 (blue)
- *   5) TOP (스크롤 600+에서 노출)
- *
- * 모바일은 MobileBottomBar가 담당 — 여기는 md 이상만 렌더.
+ * PC 우측 고정 — 빠른 이동(약속 · 서비스 · 고객후기 · 견적문의) + 바로연결 · 카톡상담 · TOP.
+ * 첫 화면을 지나면 나타난다(기반 동작).
  */
-export function FloatingDesktop() {
-  const { phone, kakao } = getContactInfo();
-  const kakaoHref = kakao?.url ?? BUSINESS.kakaoChatUrl;
+export function FloatingDesktop({
+  phone,
+  kakaoUrl,
+  preview,
+  showReviews,
+}: {
+  phone: { tel: string; display: string } | null;
+  kakaoUrl: string | null;
+  preview: boolean;
+  showReviews: boolean;
+}) {
   const [showTop, setShowTop] = useState(false);
   const [showAside, setShowAside] = useState(false);
 
@@ -30,7 +28,6 @@ export function FloatingDesktop() {
     const onScroll = () => {
       const y = window.scrollY;
       setShowTop(y > 600);
-      // Hero 영역 지나서(약 400px)부터 사이드 플로팅 노출
       setShowAside(y > 400);
     };
     onScroll();
@@ -38,36 +35,30 @@ export function FloatingDesktop() {
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
-  const toTop = useCallback(() => {
-    window.scrollTo({ top: 0, behavior: "smooth" });
-  }, []);
+  const toTop = useCallback(() => window.scrollTo({ top: 0, behavior: "smooth" }), []);
 
   const anchors = [
-    { href: "/#about", label: "노모어누수" },
+    { href: "/#promise", label: "약속" },
     { href: "/#services", label: "서비스" },
-    { href: "/posts", label: "작업사례" },
-    { href: "/#reviews", label: "고객후기" },
-    { href: "/#quote-form", label: "문의하기" },
+    ...(showReviews ? [{ href: "/#reviews", label: "고객후기" }] : []),
+    { href: "/#quote", label: "견적문의" },
   ];
 
   return (
     <aside
-      aria-label="빠른 연락"
-      className={`pointer-events-none fixed right-3 top-1/2 z-30 hidden -translate-y-1/2 flex-col items-stretch gap-2 transition-opacity duration-300 md:flex ${
+      aria-label="빠른 이동"
+      className={`fixed top-1/2 right-3 z-30 hidden -translate-y-1/2 flex-col items-stretch gap-2 transition-opacity duration-300 md:flex ${
         showAside ? "opacity-100" : "pointer-events-none opacity-0"
       }`}
     >
-      {/* 앵커 메뉴 카드 */}
-      <nav
-        aria-label="빠른 이동"
-        className="pointer-events-auto w-28 overflow-hidden rounded-2xl bg-white shadow-lg ring-1 ring-slate-200"
-      >
+      <nav className="w-24 overflow-hidden rounded-2xl bg-white shadow-lg ring-1 ring-slate-200">
         <ul className="divide-y divide-slate-100">
           {anchors.map((a) => (
             <li key={a.href}>
               <Link
                 href={a.href}
-                className="block px-3 py-2 text-center text-[12px] font-bold text-slate-700 hover:bg-brand-50 hover:text-brand-700"
+                tabIndex={showAside ? 0 : -1}
+                className="block px-2 py-2.5 text-center text-[13px] font-bold text-slate-700 hover:bg-brand-50 hover:text-brand-700"
               >
                 {a.label}
               </Link>
@@ -76,62 +67,37 @@ export function FloatingDesktop() {
         </ul>
       </nav>
 
-      {/* 전화 */}
-      {phone && (
-        <a
-          href={`tel:${phone.tel}`}
-          onClick={() =>
-            trackEvent(EVENTS.CLICK_CALL, { cta_label: "floating_call" })
-          }
-          aria-label={`전화 ${phone.display}로 상담`}
-          className="pointer-events-auto flex w-28 flex-col items-center gap-1 rounded-2xl bg-cyan-400 px-2 py-3 text-[#061b35] shadow-lg shadow-cyan-500/20 hover:bg-cyan-300"
-        >
-          <Phone aria-hidden className="size-6" strokeWidth={2.25} />
-          <span className="text-[10px] font-extrabold">전화상담</span>
-        </a>
-      )}
-
-      {/* 카카오톡 */}
-      <a
-        href={kakaoHref}
-        target="_blank"
-        rel="noopener"
-        onClick={() =>
-          trackEvent(EVENTS.CLICK_KAKAO, { cta_label: "floating_kakao" })
-        }
-        aria-label="카카오톡 상담"
-        className="pointer-events-auto flex w-28 flex-col items-center gap-1 rounded-2xl bg-[#FEE500] px-2 py-3 text-[#3C1E1E] shadow-lg hover:brightness-95"
+      <ContactAction
+        href={phone ? `tel:${phone.tel}` : null}
+        preview={preview}
+        ariaLabel={phone ? `바로연결 ${phone.display}` : "바로연결"}
+        className="flex w-24 flex-col items-center gap-1 rounded-2xl bg-brand-600 px-2 py-3 text-white shadow-lg hover:bg-brand-700"
       >
-        <KakaoLogo aria-hidden className="size-6" />
-        <span className="text-[10px] font-extrabold">카톡상담</span>
-      </a>
+        <Phone aria-hidden className="size-6" strokeWidth={2.25} />
+        <span className="text-xs font-extrabold">바로연결</span>
+      </ContactAction>
 
-      {/* 최근 작업사례 후기 */}
-      <Link
-        href="/#works-cards"
-        onClick={() =>
-          trackEvent(EVENTS.CTA_CLICK, {
-            cta_label: "floating_recent_works",
-          })
-        }
-        aria-label="최근 작업사례 후기"
-        className="pointer-events-auto flex w-28 flex-col items-center gap-1 rounded-2xl bg-brand-600 px-2 py-3 text-white shadow-lg hover:bg-brand-700"
+      <ContactAction
+        href={kakaoUrl}
+        external
+        preview={preview}
+        className="flex w-24 flex-col items-center gap-1 rounded-2xl bg-kakao px-2 py-3 text-kakao-ink shadow-lg hover:brightness-95"
       >
-        <FileText aria-hidden className="size-6" strokeWidth={2.25} />
-        <span className="text-[10px] font-extrabold">최근후기</span>
-      </Link>
+        <KakaoBubble aria-hidden className="size-6" />
+        <span className="text-xs font-extrabold">카톡상담</span>
+      </ContactAction>
 
-      {/* TOP */}
       <button
         type="button"
         onClick={toTop}
         aria-label="맨 위로"
-        className={`pointer-events-auto flex w-28 flex-col items-center gap-1 rounded-2xl bg-slate-800 px-2 py-3 text-white shadow-lg hover:bg-slate-900 ${
+        tabIndex={showTop ? 0 : -1}
+        className={`flex w-24 flex-col items-center gap-1 rounded-2xl bg-brand-900 px-2 py-3 text-white shadow-lg transition-opacity hover:bg-brand-800 ${
           showTop ? "opacity-100" : "pointer-events-none opacity-0"
-        } transition-opacity`}
+        }`}
       >
         <ArrowUp aria-hidden className="size-6" strokeWidth={2.25} />
-        <span className="text-[10px] font-extrabold">TOP</span>
+        <span className="text-xs font-extrabold">TOP</span>
       </button>
     </aside>
   );

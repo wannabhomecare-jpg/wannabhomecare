@@ -59,15 +59,14 @@ export function Reveal({
     amount: 0.15,
   });
 
-  if (reduce) return <div className={className}>{children}</div>;
-
+  // 움직임 줄이기 설정이면 같은 요소를 그대로 두고 바로 보이게 한다(구조가 바뀌면 화면이 숨은 채로 남는다)
   return (
     <motion.div
       ref={ref}
       variants={VARIANTS[variant]}
       initial="hidden"
-      animate={isInView ? "show" : "hidden"}
-      transition={{ duration, delay, ease: [0.16, 1, 0.3, 1] }}
+      animate={reduce || isInView ? "show" : "hidden"}
+      transition={reduce ? { duration: 0 } : { duration, delay, ease: [0.16, 1, 0.3, 1] }}
       className={className}
     >
       {children}
@@ -94,16 +93,14 @@ export function RevealGroup({
     amount: 0.1,
   });
 
-  if (reduce) return <div className={className}>{children}</div>;
-
   return (
     <motion.div
       ref={ref}
       initial="hidden"
-      animate={isInView ? "show" : "hidden"}
+      animate={reduce || isInView ? "show" : "hidden"}
       variants={{
         hidden: {},
-        show: { transition: { staggerChildren: stagger } },
+        show: { transition: { staggerChildren: reduce ? 0 : stagger } },
       }}
       className={className}
     >
@@ -122,11 +119,10 @@ export function RevealItem({
   className?: string;
 }) {
   const reduce = useReducedMotion();
-  if (reduce) return <div className={className}>{children}</div>;
   return (
     <motion.div
       variants={VARIANTS[variant]}
-      transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+      transition={reduce ? { duration: 0 } : { duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
       className={className}
     >
       {children}

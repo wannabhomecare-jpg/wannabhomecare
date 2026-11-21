@@ -8,7 +8,6 @@
  */
 
 import { NextResponse, type NextRequest } from "next/server";
-import { legacySearchPaths } from "@/lib/legacy-search-paths";
 import {
   adminSessionCookieOptions,
   COOKIE_NAME,
@@ -17,63 +16,11 @@ import {
 } from "@/lib/auth";
 
 export const config = {
-  matcher: [
-    "/admin/:path*",
-    "/posts/:slug",
-    "/seoul/:slug",
-    "/seoul-서울",
-    {
-      source: "/:path*",
-      has: [{ type: "host", value: "leak-site.vercel.app" }],
-    },
-  ],
+  matcher: ["/admin/:path*"],
 };
 
 export async function proxy(request: NextRequest) {
-  if (request.nextUrl.hostname === "leak-site.vercel.app") {
-    return new NextResponse(
-      `<!doctype html>
-<html lang="ko">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="robots" content="noindex, nofollow" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>삭제된 이전 주소</title>
-  </head>
-  <body>
-    <main>
-      <h1>이전 주소의 게시물은 삭제되었습니다.</h1>
-      <p><a href="https://nomorenusu.com/">노모어누수 공식 홈페이지로 이동</a></p>
-    </main>
-  </body>
-</html>`,
-      {
-        status: 404,
-        headers: {
-          "Content-Type": "text/html; charset=utf-8",
-          "X-Robots-Tag": "noindex, nofollow",
-          "Cache-Control": "public, max-age=0, s-maxage=86400",
-        },
-      },
-    );
-  }
-
   const { pathname } = request.nextUrl;
-
-  if (pathname !== "/admin" && !pathname.startsWith("/admin/")) {
-    let decodedPath: string;
-    try {
-      decodedPath = decodeURIComponent(pathname);
-    } catch {
-      return NextResponse.next();
-    }
-    const destination = legacySearchPaths.get(decodedPath.replace(/\/$/, ""));
-    if (!destination) return NextResponse.next();
-    const target = new URL(destination, "https://nomorenusu.com");
-    target.search = request.nextUrl.search;
-    return NextResponse.redirect(target, 308);
-  }
-
 
   if (pathname === "/admin/login" || pathname === "/admin/api/login") {
     return NextResponse.next();

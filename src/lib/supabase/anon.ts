@@ -3,13 +3,8 @@ import { getSupabaseConfig } from "@/lib/env";
 import type { Database } from "@/types/database";
 
 /**
- * 공개 read-only 데이터(시공 사례·실시간 보드) 조회용 anon 클라이언트.
- *
- * `src/lib/supabase/server.ts`는 `cookies()`를 사용해 `generateStaticParams`나
- * `unstable_cache` 컨텍스트(쿠키 없음)에서 못 쓴다. RLS가 published=true /
- * visible_on_board=true 행만 노출하므로 anon 키로도 권한 안전.
- *
- * Realtime 구독은 브라우저에서 `createSupabaseBrowserClient()`로 별도 처리.
+ * 공개 데이터(사이트 문구, 공개 접수 목록 뷰) 읽기용 공개 키 클라이언트.
+ * 견적 요청 표는 공개 키로 읽을 수 없다(RLS·권한으로 막혀 있다).
  */
 
 let cached: SupabaseClient<Database> | null = null;

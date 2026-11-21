@@ -1,247 +1,120 @@
 "use server";
 
-import { z } from "zod";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
-import { sendKakaoOwnerNotification } from "@/lib/kakao/owner-notify";
-import type { LeakRequestInsert } from "@/types/database";
+import { formatPhone, quotePayloadSchema } from "@/lib/quote";
+import { isValidRegion } from "@/lib/regions-kr";
+import { hit } from "@/lib/rate-limit";
+import { headers } from "next/headers";
+import type { QuoteRequestInsert } from "@/types/database";
 
-// =============================================================================
-// 입력 검증 스키마
-// =============================================================================
+/** 30초 무료 견적 문의 — 13번 화면에서 한 번에 제출한다. 저장은 서버(서버 키)에서만 한다. */
 
 const ALLOWED_MIME = ["image/jpeg", "image/png", "image/webp"] as const;
 const MAX_IMAGES = 3;
-const MAX_BYTES = 5 * 1024 * 1024; // 5MB
+const MAX_TOTAL_BYTES = 4 * 1024 * 1024;
+const REQUEST_BUCKET = "request-images";
 
-const phoneSchema = z
-  .string()
-  .trim()
-  .regex(
-    /^010-?\d{3,4}-?\d{4}$/,
-    "010으로 시작하는 휴대전화 번호 형식이어야 합니다",
-  )
-  .transform((s) => {
-    const digits = s.replace(/\D/g, "");
-    return digits.replace(/^(\d{3})(\d{3,4})(\d{4})$/, "$1-$2-$3");
-  });
-
-const inputSchema = z.object({
-  customer_name: z
-    .string()
-    .trim()
-    .min(2, "이름은 2자 이상")
-    .max(10, "이름은 10자 이내"),
-  phone: phoneSchema,
-  region: z
-    .string()
-    .trim()
-    .max(50)
-    .optional()
-    .transform((v) => (v ? v : undefined)),
-  apartment: z
-    .string()
-    .trim()
-    .max(50)
-    .optional()
-    .transform((v) => (v ? v : undefined)),
-  symptom: z
-    .string()
-    .trim()
-    .min(10, "증상은 10자 이상")
-    .max(500, "증상은 500자 이내"),
-  utm_source: z.string().trim().max(100).optional(),
-  utm_campaign: z.string().trim().max(100).optional(),
-  city_code: z.string().trim().max(100).optional(),
-});
-
-export type QuoteFieldErrors = Partial<
-  Record<keyof z.input<typeof inputSchema>, string>
->;
-
-export type SubmitQuoteState =
-  | { status: "idle" }
-  | { status: "success"; utmSource?: string }
-  | {
-      status: "error";
-      message: string;
-      fieldErrors?: QuoteFieldErrors;
-    };
-
-// =============================================================================
-// 이미지 파일 검증 (zod 밖)
-// =============================================================================
+export type SubmitQuoteState = { status: "idle" } | { status: "success" } | { status: "error"; message: string };
 
 function pickImages(formData: FormData): File[] {
-  const all = formData.getAll("images");
-  const files: File[] = [];
-  for (const item of all) {
-    if (item instanceof File && item.size > 0) {
-      files.push(item);
-    }
-  }
-  return files;
+  return formData.getAll("images").filter((v): v is File => v instanceof File && v.size > 0);
 }
 
-function validateImages(files: File[]):
-  | { ok: true }
-  | { ok: false; message: string } {
-  if (files.length > MAX_IMAGES) {
-    return { ok: false, message: `사진은 최대 ${MAX_IMAGES}장까지 첨부할 수 있어요.` };
-  }
-  for (const f of files) {
-    if (!ALLOWED_MIME.includes(f.type as (typeof ALLOWED_MIME)[number])) {
-      return {
-        ok: false,
-        message: "JPG, PNG, WEBP 이미지만 첨부할 수 있어요.",
-      };
-    }
-    if (f.size > MAX_BYTES) {
-      return { ok: false, message: "한 장당 5MB를 넘을 수 없어요." };
-    }
-  }
-  return { ok: true };
-}
-
-function extFromMime(mime: string): "jpg" | "png" | "webp" {
-  if (mime === "image/png") return "png";
-  if (mime === "image/webp") return "webp";
-  return "jpg";
-}
-
-function buildObjectPath(mime: string): string {
+function objectPath(mime: string): string {
   const now = new Date();
   const yyyy = now.getUTCFullYear();
   const mm = String(now.getUTCMonth() + 1).padStart(2, "0");
-  const ts = now.getTime();
-  const rand = Array.from(crypto.getRandomValues(new Uint8Array(4)))
+  const rand = Array.from(crypto.getRandomValues(new Uint8Array(8)))
     .map((b) => b.toString(16).padStart(2, "0"))
     .join("");
-  return `requests/${yyyy}/${mm}/${ts}-${rand}.${extFromMime(mime)}`;
+  const ext = mime === "image/png" ? "png" : mime === "image/webp" ? "webp" : "jpg";
+  return `requests/${yyyy}/${mm}/${now.getTime()}-${rand}.${ext}`;
 }
 
-// =============================================================================
-// Server Action
-// =============================================================================
+export async function submitQuote(_prev: SubmitQuoteState, formData: FormData): Promise<SubmitQuoteState> {
+  const h = await headers();
+  const ip = h.get("x-forwarded-for")?.split(",")[0]?.trim() || h.get("x-real-ip") || "local";
+  const limited = hit(`quote:${ip}`, 8, 10 * 60_000);
+  if (!limited.allowed) {
+    return { status: "error", message: "잠시 후 다시 시도해 주세요." };
+  }
 
-export async function submitQuote(
-  _prev: SubmitQuoteState,
-  formData: FormData,
-): Promise<SubmitQuoteState> {
-  // 1) 기본 필드 검증
-  const raw = {
-    customer_name: formData.get("customer_name"),
-    phone: formData.get("phone"),
-    region: formData.get("region"),
-    apartment: formData.get("apartment"),
-    symptom: formData.get("symptom"),
-    utm_source: formData.get("utm_source") || undefined,
-    utm_campaign: formData.get("utm_campaign") || undefined,
-    city_code: formData.get("city_code") || undefined,
-  };
-
-  const parsed = inputSchema.safeParse(raw);
+  let raw: unknown;
+  try {
+    raw = JSON.parse(String(formData.get("payload") ?? ""));
+  } catch {
+    return { status: "error", message: "입력하신 내용을 확인해 주세요." };
+  }
+  const parsed = quotePayloadSchema.safeParse(raw);
   if (!parsed.success) {
-    const flat = parsed.error.flatten().fieldErrors;
-    const fieldErrors: QuoteFieldErrors = {};
-    for (const [key, msgs] of Object.entries(flat)) {
-      if (msgs && msgs[0]) {
-        fieldErrors[key as keyof QuoteFieldErrors] = msgs[0];
-      }
-    }
-    return {
-      status: "error",
-      message: "입력하신 내용을 확인해 주세요.",
-      fieldErrors,
-    };
+    return { status: "error", message: "입력하신 내용을 확인해 주세요." };
   }
-  const data = parsed.data;
+  const p = parsed.data;
+  if (!isValidRegion(p.sido, p.sigungu)) {
+    return { status: "error", message: "주소의 시·도와 시·군·구를 다시 골라 주세요." };
+  }
 
-  // 2) 이미지 검증
   const files = pickImages(formData);
-  const imgCheck = validateImages(files);
-  if (!imgCheck.ok) {
-    return { status: "error", message: imgCheck.message };
+  if (files.length > MAX_IMAGES) return { status: "error", message: "사진은 최대 3장까지 첨부할 수 있어요." };
+  if (files.some((f) => !ALLOWED_MIME.includes(f.type as (typeof ALLOWED_MIME)[number]))) {
+    return { status: "error", message: "JPG, PNG, WEBP 사진만 첨부할 수 있어요." };
+  }
+  if (files.reduce((n, f) => n + f.size, 0) > MAX_TOTAL_BYTES) {
+    return { status: "error", message: "사진 용량이 너무 커요. 사진 수를 줄여 다시 시도해 주세요." };
   }
 
-  // 3) Supabase 클라이언트 준비 (키 미설정이면 명확한 에러)
   let supabase: ReturnType<typeof createSupabaseAdminClient>;
   try {
     supabase = createSupabaseAdminClient();
   } catch (err) {
-    console.error("[submit-quote] supabase admin config:", err);
-    return {
-      status: "error",
-      message: "서버 설정이 아직 준비되지 않았습니다. 잠시 후 다시 시도해 주세요.",
-    };
+    console.error("[submit-quote] supabase config:", err instanceof Error ? err.message : "unknown");
+    return { status: "error", message: "지금은 접수할 수 없어요. 잠시 후 다시 시도하거나 전화로 문의해 주세요." };
   }
 
-  // 4) 이미지 업로드 (있을 때만)
-  const imageUrls: string[] = [];
+  const paths: string[] = [];
   for (const file of files) {
-    const path = buildObjectPath(file.type);
+    const path = objectPath(file.type);
     const { error } = await supabase.storage
-      .from("request-images")
+      .from(REQUEST_BUCKET)
       .upload(path, file, { contentType: file.type, upsert: false });
     if (error) {
-      console.error("[submit-quote] upload error:", error);
-      return {
-        status: "error",
-        message:
-          "이미지 업로드 중 문제가 발생했어요. 사진을 빼고 다시 시도해 주세요.",
-      };
+      console.error("[submit-quote] upload error:", error.message);
+      if (paths.length) await supabase.storage.from(REQUEST_BUCKET).remove(paths);
+      return { status: "error", message: "사진을 올리지 못했어요. 사진을 빼고 다시 시도해 주세요." };
     }
-    const { data: pub } = supabase.storage
-      .from("request-images")
-      .getPublicUrl(path);
-    imageUrls.push(pub.publicUrl);
+    paths.push(path);
   }
 
-  // 5) symptom 본문 끝에 이미지 URL 추가
-  const symptomBody =
-    imageUrls.length > 0
-      ? `${data.symptom}\n\n[첨부 사진]\n${imageUrls.join("\n")}`
-      : data.symptom;
-
-  // 6) DB insert
-  const row: LeakRequestInsert = {
-    customer_name: data.customer_name,
-    phone: data.phone,
-    region: data.region ?? null,
-    apartment: data.apartment ?? null,
-    symptom: symptomBody,
-    utm_source: data.utm_source ?? null,
-    utm_campaign: data.utm_campaign ?? null,
-    city_code: data.city_code ?? null,
+  const row: QuoteRequestInsert = {
+    service: p.service,
+    clean_type: p.cleanType ?? null,
+    building_type: p.buildingType ?? null,
+    building_other: p.buildingOther || null,
+    business_type: p.businessType ?? null,
+    business_other: p.businessOther || null,
+    rooms: p.rooms ?? null,
+    bathrooms: p.bathrooms ?? null,
+    balconies: p.balconies ?? null,
+    structure: p.structure ?? null,
+    extra_services: p.extras ?? [],
+    area: p.area,
+    sido: p.sido,
+    sigungu: p.sigungu,
+    address_detail: p.addressDetail,
+    preferred_date: p.preferredDate,
+    customer_name: p.customerName,
+    phone: formatPhone(p.phone),
+    message: p.message || null,
+    image_paths: paths,
+    consent_at: new Date().toISOString(),
   };
 
-  const { data: inserted, error: insertError } = await supabase
-    .from("leak_requests")
-    .insert(row)
-    .select("id")
-    .single();
-
-  if (insertError) {
-    console.error("[submit-quote] insert error:", insertError);
-    return {
-      status: "error",
-      message: "신청을 저장하지 못했어요. 잠시 후 다시 시도해 주세요.",
-    };
+  const { error } = await supabase.from("quote_requests").insert(row);
+  if (error) {
+    console.error("[submit-quote] insert error:", error.message);
+    if (paths.length) await supabase.storage.from(REQUEST_BUCKET).remove(paths);
+    return { status: "error", message: "접수를 저장하지 못했어요. 잠시 후 다시 시도해 주세요." };
   }
 
-  // 접수 저장은 우선 보장한다. 카카오 알림이 일시 실패해도 고객에게
-  // 재접수를 요구하지 않으며, 관리자는 관리자 화면에서 접수 내용을 확인할 수 있다.
-  try {
-    await sendKakaoOwnerNotification({
-      id: inserted.id,
-      customerName: data.customer_name,
-      phone: data.phone,
-      region: data.region,
-      apartment: data.apartment,
-      symptom: data.symptom,
-    });
-  } catch (error) {
-    console.error("[submit-quote] Kakao owner notification failed:", error);
-  }
-
-  return { status: "success", utmSource: data.utm_source };
+  return { status: "success" };
 }

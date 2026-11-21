@@ -11,7 +11,8 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "test": "node --import tsx --test tests/*.test.ts tests/*.test.mjs",
-    "sync:media": "node --env-file=.env.local --import tsx scripts/sync-photo-library.ts"
+    "build:assets": "node scripts/build-assets.mjs",
+    "check:launch": "node --env-file-if-exists=.env.local --import tsx scripts/check-launch.ts"
   },
   "dependencies": {
     "@supabase/ssr": "^0.10.3",
@@ -20,6 +21,7 @@
     "framer-motion": "^12.39.0",
     "lucide-react": "^1.16.0",
     "next": "16.2.6",
+    "pretendard": "^1.3.9",
     "react": "^19.3.0",
     "react-compare-slider": "^4.0.0",
     "react-dom": "^19.3.0",
@@ -30,6 +32,7 @@
     "zod": "^4.4.3"
   },
   "devDependencies": {
+    "@axe-core/playwright": "^4.14.0",
     "@electric-sql/pglite": "^0.5.8",
     "@romanize/korean": "^0.1.3",
     "@tailwindcss/postcss": "^4",
@@ -38,6 +41,7 @@
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "16.2.6",
+    "playwright": "^1.65.1",
     "prettier": "^3.8.3",
     "prettier-plugin-tailwindcss": "^0.8.0",
     "supabase": "^2.100.0",

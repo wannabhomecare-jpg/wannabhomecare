@@ -15,7 +15,8 @@ import { tmpdir } from 'node:os';
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const args = new Set(process.argv.slice(2));
 const PROJECT = 'wannab-homecare';
-const BASE_REPO = 'https://github.com/nomorenusu-a11y/leak-site.git';
+// 기반 저장소 주소는 커밋하지 않는다(.env.local 의 BASE_REPO_URL). 없으면 이 확인을 건너뛴다.
+const BASE_REPO = process.env.BASE_REPO_URL || '';
 const BASE_COMMIT = '408ae5609406ccfda4c398e0363bbe94499dc259';
 
 // ---------- env ----------
@@ -195,9 +196,9 @@ function checkGithub() {
   const tmp = mkdtempSync(join(tmpdir(), 'base-check-'));
   try {
     const a = sh('git', ['init', '-q'], { cwd: tmp });
-    const b = a.ok && sh('git', ['fetch', '-q', '--depth', '1', BASE_REPO, BASE_COMMIT], { cwd: tmp });
+    const b = a.ok && BASE_REPO && sh('git', ['fetch', '-q', '--depth', '1', BASE_REPO, BASE_COMMIT], { cwd: tmp });
     const c = b && b.ok && sh('git', ['cat-file', '-t', BASE_COMMIT], { cwd: tmp });
-    g.baseCommit = Boolean(c && c.ok && c.out.trim() === 'commit');
+    g.baseCommit = BASE_REPO ? Boolean(c && c.ok && c.out.trim() === 'commit') : null;
   } finally { rmSync(tmp, { recursive: true, force: true }); }
 
   const name = sh('git', ['config', 'user.name'], { cwd: root });
@@ -270,7 +271,7 @@ function render() {
   L.push(`| 항목 | 결과 |\n| --- | --- |`);
   L.push(`| 저장소 | ${g.repo ?? '-'} |`);
   L.push(`| push (dry-run) | ${g.push ? '성공' : '실패'}${g.pushPermission != null ? ` · API 권한 ${g.pushPermission ? 'push 가능' : 'push 불가'}` : ''} |`);
-  L.push(`| 기반 커밋 ${BASE_COMMIT.slice(0, 7)} 받기 | ${g.baseCommit ? '성공' : '실패'} |`);
+  L.push(`| 기반 커밋 ${BASE_COMMIT.slice(0, 7)} 받기 | ${g.baseCommit === null ? '건너뜀(BASE_REPO_URL 없음)' : g.baseCommit ? '성공' : '실패'} |`);
   L.push(`| Codespace GitHub 사용자 | ${g.user ?? '-'} |`);
   L.push(`| 커밋 작성자 이름 | ${r.git.authorName ?? '-'} |`);
   L.push(`| 작성자 이메일 | ${r.git.emailSet ? (r.git.emailIsNoreply ? 'GitHub noreply 주소' : 'noreply 아님') : '설정 안 됨'} |`);
@@ -279,7 +280,7 @@ function render() {
 }
 
 // 출력에 토큰 값이 일부라도 들어 있는지 검사(16자 조각 단위)
-function leaks(text) {
+function hasTokenInOutput(text) {
   for (const sec of SECRETS) {
     const n = Math.min(16, sec.length);
     for (let i = 0; i + n <= sec.length; i++) if (text.includes(sec.slice(i, i + n))) return true;
@@ -287,7 +288,7 @@ function leaks(text) {
   return false;
 }
 const out = render();
-if (leaks(out)) {
+if (hasTokenInOutput(out)) {
   console.error('출력에 토큰 값 일부가 들어 있어 출력하지 않습니다.');
   process.exit(2);
 }

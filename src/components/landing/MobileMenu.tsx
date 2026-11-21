@@ -2,31 +2,15 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { Menu, X, Phone, MessageCircle, FileText, ChevronRight } from "@/components/icons";
-import { getContactInfo } from "@/lib/contact";
-import { EVENTS, trackEvent } from "@/lib/analytics";
+import { Menu, X, ChevronRight, FileText } from "@/components/icons";
+import { QuoteLink } from "@/components/common/QuoteLink";
 
-type NavItem = { href: string; label: string };
+type Item = { key: string; name: string };
 
-const NAV: NavItem[] = [
-  { href: "/", label: "홈" },
-  { href: "/#about", label: "노모어누수" },
-  { href: "/#services", label: "서비스" },
-  { href: "/posts", label: "작업사례" },
-  { href: "/#reviews", label: "고객후기" },
-  { href: "/faq", label: "자주 묻는 질문" },
-  { href: "/#quote-form", label: "무료 견적 신청" },
-];
-
-/**
- * 모바일 햄버거 메뉴 (Drawer).
- * Header의 좌측 햄버거 버튼이 토글. body scroll lock + ESC 닫기.
- */
-export function MobileMenu() {
+/** 휴대폰 메뉴(서랍). 메뉴 6개와 '견적 문의'. ESC 로 닫힌다. */
+export function MobileMenu({ items }: { items: Item[] }) {
   const [open, setOpen] = useState(false);
-  const { phone, kakao } = getContactInfo();
 
-  // body scroll lock + ESC 닫기
   useEffect(() => {
     if (!open) return;
     const prev = document.body.style.overflow;
@@ -53,82 +37,47 @@ export function MobileMenu() {
         <Menu aria-hidden className="size-6" strokeWidth={2.25} />
       </button>
 
-      {/* Drawer */}
       {open && (
-        <div className="fixed inset-0 z-50 lg:hidden" role="dialog" aria-modal="true">
-          {/* Backdrop */}
-          <div
-            onClick={() => setOpen(false)}
-            className="absolute inset-0 bg-black/50 backdrop-blur-sm"
-            aria-hidden
-          />
-          {/* Panel */}
-          <aside className="absolute left-0 top-0 flex h-full w-[86%] max-w-sm flex-col bg-[#061b35] text-white shadow-2xl animate-[slideInLeft_.25s_ease-out]">
+        <div className="fixed inset-0 z-50 lg:hidden" role="dialog" aria-modal="true" aria-label="메뉴">
+          <div onClick={() => setOpen(false)} className="absolute inset-0 bg-brand-950/60 backdrop-blur-sm" aria-hidden />
+          <aside className="absolute top-0 left-0 flex h-full w-[86%] max-w-sm animate-[slideInLeft_.25s_ease-out] flex-col bg-brand-900 text-white shadow-2xl">
             <div className="flex items-center justify-between border-b border-white/10 px-5 py-4">
-              <span className="text-base font-black">노모어누수 메뉴</span>
+              <span className="text-base font-black">메뉴</span>
               <button
                 type="button"
                 aria-label="메뉴 닫기"
                 onClick={() => setOpen(false)}
-                className="inline-flex size-10 items-center justify-center rounded-lg text-slate-200 hover:bg-white/10"
+                className="inline-flex size-10 items-center justify-center rounded-lg text-brand-100 hover:bg-white/10"
               >
                 <X aria-hidden className="size-5" strokeWidth={2.25} />
               </button>
             </div>
 
-            <nav className="flex-1 overflow-y-auto px-2 py-3" aria-label="모바일 메인 메뉴">
+            <nav className="flex-1 overflow-y-auto px-2 py-3" aria-label="휴대폰 메뉴">
               <ul className="flex flex-col">
-                {NAV.map((it) => (
-                  <li key={it.href}>
+                {items.map((it) => (
+                  <li key={it.key}>
                     <Link
-                      href={it.href}
+                      href="/#services"
                       onClick={() => setOpen(false)}
-                      className="flex items-center justify-between rounded-xl px-3 py-3.5 text-base font-bold text-slate-100 hover:bg-white/10"
+                      className="flex items-center justify-between rounded-xl px-3 py-3.5 text-base font-bold text-white hover:bg-white/10"
                     >
-                      <span>{it.label}</span>
-                      <ChevronRight aria-hidden className="size-5 text-cyan-300" strokeWidth={2} />
+                      <span>{it.name}</span>
+                      <ChevronRight aria-hidden className="size-5 text-brand-300" strokeWidth={2} />
                     </Link>
                   </li>
                 ))}
               </ul>
             </nav>
 
-            {/* 하단 CTA */}
-            <div className="space-y-2 border-t border-white/10 p-4">
-              {phone && (
-                <a
-                  href={`tel:${phone.tel}`}
-                  onClick={() => {
-                    trackEvent(EVENTS.CLICK_CALL, { cta_label: "drawer_call" });
-                    setOpen(false);
-                  }}
-                  className="flex items-center justify-center gap-2 rounded-xl bg-cyan-400 px-4 py-3.5 text-base font-extrabold text-[#061b35] shadow-md shadow-cyan-500/20"
-                >
-                  <Phone aria-hidden className="size-5" strokeWidth={2.25} />
-                  <span>{phone.display}</span>
-                </a>
-              )}
-              {kakao ? (
-                <a
-                  href={kakao.url}
-                  target="_blank"
-                  rel="noopener"
-                  onClick={() => setOpen(false)}
-                  className="flex items-center justify-center gap-2 rounded-xl bg-[#FEE500] px-4 py-3.5 text-base font-extrabold text-[#191600]"
-                >
-                  <MessageCircle aria-hidden className="size-5" strokeWidth={2.25} />
-                  <span>카카오톡 상담</span>
-                </a>
-              ) : (
-                <Link
-                  href="/#quote-form"
-                  onClick={() => setOpen(false)}
-                  className="flex items-center justify-center gap-2 rounded-xl bg-brand-600 px-4 py-3.5 text-base font-extrabold text-white"
-                >
-                  <FileText aria-hidden className="size-5" strokeWidth={2.25} />
-                  <span>무료 견적 받기</span>
-                </Link>
-              )}
+            <div className="border-t border-white/10 p-4">
+              <QuoteLink
+                onClick={() => setOpen(false)}
+                className="flex items-center justify-center gap-2 rounded-xl bg-white px-4 py-3.5 text-base font-extrabold text-brand-700"
+              >
+                <FileText aria-hidden className="size-5" strokeWidth={2.25} />
+                <span>견적 문의</span>
+              </QuoteLink>
             </div>
           </aside>
         </div>

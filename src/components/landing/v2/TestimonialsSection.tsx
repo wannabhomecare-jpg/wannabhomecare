@@ -1,61 +1,68 @@
+import Image from "next/image";
 import { Container } from "@/components/ui/Container";
-import { createSupabaseAnonClient } from "@/lib/supabase/anon";
+import { MessageCircle } from "@/components/icons";
 import { Reveal } from "@/components/ui/Reveal";
 import { TestimonialsCarouselClient } from "./TestimonialsCarouselClient";
-import { getTestimonials } from "@/lib/site-content";
+import { IS_PREVIEW } from "@/lib/env";
+import { getPublishedReviews } from "@/lib/visibility";
 
-type Cat = "leak" | "toilet" | "sink" | "heating" | "frozen";
-
+/**
+ * 고객 후기 — 고객이 보낸 카카오톡 캡처(이름·프로필을 가린 것)만 보여 준다.
+ * 미리보기에서 캡처가 없으면 자리표시 4칸, 오픈 단계에서 0건이면 블록을 숨긴다.
+ */
 export async function TestimonialsSection() {
-  const TESTIMONIALS = await getTestimonials();
-  const supabase = createSupabaseAnonClient();
-
-  const photos: Partial<Record<Cat, string>> = {};
-  for (const t of TESTIMONIALS) {
-    if (photos[t.category as Cat]) continue;
-    const { data } = await supabase
-      .from("posts")
-      .select("cover_image_url")
-      .eq("published", true)
-      .eq("category", t.category as string)
-      .not("cover_image_url", "is", null)
-      .order("published_at", { ascending: false })
-      .limit(1)
-      .maybeSingle();
-    if (data?.cover_image_url) photos[t.category as Cat] = data.cover_image_url;
-  }
-
-  const items = TESTIMONIALS.map((t) => ({
-    author: t.author,
-    region: t.region,
-    category: t.category,
-    ko: t.ko,
-    body: t.body,
-    photo: photos[t.category as Cat] ?? null,
-  }));
+  const reviews = await getPublishedReviews();
+  if (reviews.length === 0 && !IS_PREVIEW) return null;
 
   return (
-    <section id="reviews" className="scroll-mt-20 bg-[#eef5fc] py-16 md:py-24">
+    <section id="reviews" aria-labelledby="reviews-title" className="scroll-mt-24 bg-brand-50 py-14 md:py-24">
       <Container>
-        <Reveal variant="up" className="mx-auto max-w-2xl text-center">
-          <p className="section-kicker">
-            REVIEWS
-          </p>
-          <h2 className="mt-4 text-3xl font-black tracking-tight text-slate-950 sm:text-4xl lg:text-5xl">
-            작업으로 증명한 <span className="text-brand-600">고객 후기</span>
+        <Reveal variant="up" className="max-w-2xl sm:mx-auto sm:text-center">
+          <p className="section-kicker">REVIEW</p>
+          <h2 id="reviews-title" className="mt-3 text-[1.6rem] font-black tracking-tight text-brand-900 sm:mt-4 sm:text-4xl lg:text-[2.75rem]">
+            고객님이 <span className="text-brand-600">카카오톡으로</span> 보내 주신 후기
           </h2>
-          <p className="mt-5 text-base leading-7 text-slate-600 sm:text-lg">
-            실제 시공 후 받은 고객님들의 후기입니다
+          <p className="mt-3 text-[15px] leading-7 text-slate-600 sm:mt-4 sm:text-lg">
+            받은 메시지를 캡처 그대로 보여 드립니다. 이름과 프로필은 가립니다.
           </p>
         </Reveal>
 
-        <Reveal variant="fade" delay={0.1} className="mt-10">
-          <TestimonialsCarouselClient items={items} />
+        <Reveal variant="fade" delay={0.1} className="mt-7 sm:mt-12">
+          <TestimonialsCarouselClient label="고객 후기">
+            {reviews.length > 0
+              ? reviews.map((r) => (
+                  <article key={r.id} className="overflow-hidden rounded-2xl border border-brand-200 bg-white">
+                    <div className="relative aspect-[3/4] bg-brand-100">
+                      <Image
+                        src={r.image}
+                        alt={`${r.service} 고객이 카카오톡으로 보낸 후기 캡처`}
+                        fill
+                        sizes="(min-width: 1024px) 300px, 50vw"
+                        className="object-cover object-top"
+                      />
+                    </div>
+                    <div className="px-4 py-3 sm:px-5 sm:py-4">
+                      <p className="text-[15px] font-bold text-brand-900">
+                        {r.service} · {r.region}
+                      </p>
+                      <p className="mt-0.5 text-[13px] text-slate-600">{r.month}</p>
+                    </div>
+                  </article>
+                ))
+              : [1, 2, 3, 4].map((n) => (
+                  <article key={n} className="overflow-hidden rounded-2xl border border-brand-200 bg-white">
+                    <div className="flex aspect-[3/4] flex-col items-center justify-center gap-2 bg-brand-100 px-3 text-center">
+                      <MessageCircle aria-hidden className="size-8 text-brand-600" strokeWidth={1.75} />
+                      <p className="text-[15px] font-bold text-brand-800">카카오톡 후기 캡처 자리</p>
+                    </div>
+                    <div className="px-4 py-3 sm:px-5 sm:py-4">
+                      <p className="text-[15px] font-bold text-brand-900">[서비스 · 지역]</p>
+                      <p className="mt-0.5 text-[13px] text-slate-600">[작업한 달]</p>
+                    </div>
+                  </article>
+                ))}
+          </TestimonialsCarouselClient>
         </Reveal>
-
-        <p className="mt-6 text-center text-xs text-slate-500">
-          * 후기는 개인의 의견이며, 실제 결과는 현장 상황에 따라 다를 수 있습니다.
-        </p>
       </Container>
     </section>
   );

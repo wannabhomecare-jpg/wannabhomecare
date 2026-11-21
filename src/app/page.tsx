@@ -2,57 +2,53 @@ import type { Metadata } from "next";
 import { Header } from "@/components/landing/Header";
 import { Footer } from "@/components/landing/Footer";
 import { HeroV2 } from "@/components/landing/v2/HeroV2";
-import { AboutCards } from "@/components/landing/v2/AboutCards";
-import { TimeEmphasis } from "@/components/landing/v2/TimeEmphasis";
+import { MasterSection } from "@/components/landing/v2/MasterSection";
 import { ServicesList } from "@/components/landing/v2/ServicesList";
 import { TestimonialsSection } from "@/components/landing/v2/TestimonialsSection";
-import { WorksCardsSection } from "@/components/landing/v2/WorksCardsSection";
+import { InstagramSection } from "@/components/landing/v2/InstagramSection";
 import { QuoteFormSectionV2 } from "@/components/landing/v2/QuoteFormSectionV2";
-import { MasterSection } from "@/components/landing/v2/MasterSection";
-import { FaqSection } from "@/components/landing/v2/FaqSection";
 import { MobileBottomBar } from "@/components/landing/v2/MobileBottomBar";
 import { FloatingDesktop } from "@/components/landing/v2/FloatingDesktop";
-import { landingMetadata } from "@/lib/seo/meta";
-import { localBusinessJsonLd } from "@/lib/seo/schema";
-import { faqPageJsonLd, loadFaqItems } from "@/lib/seo/faq";
+import { baseMetadata } from "@/lib/seo/meta";
+import { localBusinessJsonLd, safeJsonLd } from "@/lib/seo/jsonld";
+import { BUSINESS } from "@/lib/business";
+import { IS_PREVIEW } from "@/lib/env";
+import { getSectionVisibility } from "@/lib/visibility";
 
-export const revalidate = 3600;
-export const metadata: Metadata = landingMetadata("");
+export const revalidate = 60;
+export const metadata: Metadata = baseMetadata;
 
+/**
+ * 메인: 상단 띠 → 헤더 → 한 줄 띠 → 첫 화면(히어로 + 실시간 목록) → 약속 → 서비스 6칸
+ * → 고객 후기 → 인스타그램 → 30초 무료 견적 → 푸터
+ */
 export default async function HomePage() {
-  const faqItems = await loadFaqItems();
-
+  const vis = await getSectionVisibility();
+  const phone = BUSINESS.contact.phone;
   return (
     <>
       <script
         type="application/ld+json"
         suppressHydrationWarning
-        dangerouslySetInnerHTML={{
-          __html: JSON.stringify(localBusinessJsonLd()),
-        }}
-      />
-      <script
-        type="application/ld+json"
-        suppressHydrationWarning
-        dangerouslySetInnerHTML={{
-          __html: JSON.stringify(faqPageJsonLd(faqItems)),
-        }}
+        dangerouslySetInnerHTML={{ __html: safeJsonLd(localBusinessJsonLd()) }}
       />
       <Header />
-      <main className="theme-shell flex-1 pb-24">
-        <HeroV2 cityLabel="" />
-        <AboutCards />
+      <main className="flex-1">
+        <HeroV2 />
         <MasterSection />
-        <TimeEmphasis />
         <ServicesList />
-        <WorksCardsSection />
         <TestimonialsSection />
+        <InstagramSection />
         <QuoteFormSectionV2 />
-        <FaqSection items={faqItems} />
       </main>
       <Footer />
       <MobileBottomBar />
-      <FloatingDesktop />
+      <FloatingDesktop
+        phone={phone ? { tel: phone.tel, display: phone.display } : null}
+        kakaoUrl={BUSINESS.contact.kakao?.url ?? null}
+        preview={IS_PREVIEW}
+        showReviews={vis.reviews}
+      />
     </>
   );
 }

@@ -1,151 +1,74 @@
-import { categoryValues } from "@/lib/post-categories";
-import Link from "next/link";
 import Image from "next/image";
 import { Container } from "@/components/ui/Container";
-import { Droplets, Bath, Wrench, Thermometer, Snowflake, ArrowRight } from "@/components/icons";
-import { siteConfig } from "@/lib/env";
-import { createSupabaseAnonClient } from "@/lib/supabase/anon";
+import { ArrowRight } from "@/components/icons";
 import { Reveal, RevealGroup, RevealItem } from "@/components/ui/Reveal";
-import { getServicesLeak, getServicesPipe } from "@/lib/site-content";
-import type { ServiceData } from "@/types/database";
+import { QuoteLink } from "@/components/common/QuoteLink";
+import { getServices } from "@/lib/site-content";
+import type { ServiceItem } from "@/lib/services";
 
-type Cat = "leak" | "toilet" | "sink" | "heating" | "frozen";
-
-const ICON_MAP: Record<
-  string,
-  React.ComponentType<{ className?: string; strokeWidth?: number; "aria-hidden"?: boolean }>
-> = {
-  Droplets,
-  Bath,
-  Wrench,
-  Thermometer,
-  Snowflake,
-};
-
-const ALL_CATS: Cat[] = ["leak", "toilet", "sink", "heating", "frozen"];
-
-async function loadCovers() {
-  const supabase = createSupabaseAnonClient();
-  const covers: Partial<Record<Cat, string>> = {};
-  for (const c of ALL_CATS) {
-    const { data } = await supabase
-      .from("posts")
-      .select("cover_image_url")
-      .eq("published", true)
-      .in("category", categoryValues(c))
-      .not("cover_image_url", "is", null)
-      .order("published_at", { ascending: false })
-      .limit(1)
-      .maybeSingle();
-    if (data?.cover_image_url) covers[c] = data.cover_image_url;
+function Photo({ s, sizes }: { s: ServiceItem; sizes: string }) {
+  if (!s.image) {
+    return (
+      <div className="flex h-full items-center justify-center bg-brand-100 px-2 text-center text-xs font-bold text-brand-800 sm:text-base">
+        사진 준비 중
+      </div>
+    );
   }
-  return covers;
-}
-
-function Card({ s, cover }: { s: ServiceData; cover?: string }) {
-  const href = s.cat ? `/posts?cat=${s.cat}` : (s.href ?? "/posts");
-  const imgSrc = cover ?? s.image;
-  const Icon = ICON_MAP[s.icon] ?? Wrench;
   return (
-    <article className="group h-full overflow-hidden rounded-[1.35rem] border border-slate-200 bg-white shadow-[0_10px_35px_rgba(15,23,42,0.07)] transition-all duration-300 hover:-translate-y-1 hover:border-brand-200 hover:shadow-[0_20px_45px_rgba(15,23,42,0.13)]">
-      <div className="relative aspect-[16/10] bg-slate-100">
-        {imgSrc ? (
-          <Image
-            src={imgSrc}
-            alt={s.ko}
-            fill
-            sizes="(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw"
-            className="object-cover transition-transform duration-500 group-hover:scale-105"
-          />
-        ) : (
-          <div className="from-brand-50 to-brand-100 flex h-full items-center justify-center bg-gradient-to-br">
-            <Icon aria-hidden className="text-brand-400 size-16" strokeWidth={1.5} />
-          </div>
-        )}
-        <div className="absolute left-3 top-3 inline-flex items-center gap-1.5 rounded-full bg-[#061b35]/90 px-3 py-1.5 text-xs font-extrabold text-cyan-200 shadow-sm backdrop-blur-md">
-          <Icon aria-hidden className="size-3.5" strokeWidth={2.25} />
-          {s.ko}
-        </div>
-      </div>
-      <div className="border-t-2 border-cyan-400 p-5">
-        <h3 className="text-lg font-black text-slate-950">{s.ko}</h3>
-        <p className="mt-2 min-h-10 text-sm leading-6 text-slate-600">{s.desc}</p>
-        <Link
-          href={href}
-          className="text-brand-700 mt-3 inline-flex items-center gap-1 text-sm font-bold hover:underline"
-        >
-          자세히 보기
-          <ArrowRight aria-hidden className="size-4" strokeWidth={2.25} />
-        </Link>
-      </div>
-    </article>
+    <Image
+      src={s.image}
+      alt={s.alt}
+      fill
+      sizes={sizes}
+      style={{ objectPosition: s.focus }}
+      className="object-cover transition-transform duration-500 group-hover:scale-105"
+    />
   );
 }
 
 /**
- * 서비스 목록 — 누수/배관 두 그룹으로 묶어 깊이감 부여.
- *
- * 각 그룹 헤더 + 카드 그리드. 카드 hover 시 살짝 떠오르는 효과.
+ * 서비스 6칸 — 한 묶음. PC 3칸 2줄(사진 + 이름 + 한 줄 + 링크 글자), 휴대폰 3칸 2줄(작은 사진 + 이름).
+ * 카테고리 화면은 Phase 2 에서 만든다. 지금은 카드를 누르면 그 서비스가 선택된 견적으로 간다.
  */
 export async function ServicesList() {
-  const [leakServices, pipeServices, covers] = await Promise.all([
-    getServicesLeak(),
-    getServicesPipe(),
-    loadCovers(),
-  ]);
+  const services = await getServices();
 
   return (
-    <section id="services" className="scroll-mt-20 bg-white py-16 md:py-24">
+    <section id="services" aria-labelledby="services-title" className="scroll-mt-24 bg-white py-14 md:py-24">
       <Container>
-        <Reveal variant="up" className="mx-auto max-w-2xl text-center">
-          <p className="section-kicker">SERVICES</p>
-          <h2 className="mt-4 text-3xl font-black tracking-tight text-slate-950 sm:text-4xl lg:text-5xl">
-            {siteConfig.name}의 서비스 목록
+        <Reveal variant="up" className="max-w-2xl sm:mx-auto sm:text-center">
+          <p className="section-kicker">SERVICE</p>
+          <h2 id="services-title" className="mt-3 text-[1.6rem] font-black tracking-tight text-brand-900 sm:mt-4 sm:text-4xl lg:text-[2.75rem]">
+            청소부터 시공까지, <span className="text-brand-600">한 곳에서</span>
           </h2>
-          <p className="mt-5 text-base leading-7 text-slate-600 sm:text-lg">
-            다양한 상황의 누수·배관 서비스를 받아보실 수 있습니다
+          <p className="mt-3 text-[15px] leading-7 text-slate-600 sm:mt-4 sm:text-lg">
+            필요한 서비스를 누르면 바로 견적 문의로 이어집니다.
           </p>
         </Reveal>
 
-        <div className="mt-12">
-          <Reveal variant="up" className="mb-5 flex items-end justify-between gap-3">
-            <div>
-              <p className="text-brand-500 text-xs font-bold tracking-wider uppercase">Group 1</p>
-              <h3 className="mt-0.5 text-xl font-extrabold tracking-tight text-slate-900 sm:text-2xl">
-                누수 관련 서비스
-              </h3>
-              <p className="mt-1 text-sm text-slate-600">아파트·빌라·주택 등 모든 건물 대응</p>
-            </div>
-          </Reveal>
-          <RevealGroup stagger={0.08} className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            {leakServices.map((s) => (
-              <RevealItem key={s.ko} variant="up">
-                <Card s={s} cover={s.cat ? covers[s.cat as Cat] : undefined} />
-              </RevealItem>
-            ))}
-          </RevealGroup>
-        </div>
-
-        <div className="mt-9">
-          <Reveal variant="up" className="mb-5 flex items-end justify-between gap-3">
-            <div>
-              <p className="text-brand-500 text-xs font-bold tracking-wider uppercase">Group 2</p>
-              <h3 className="mt-0.5 text-xl font-extrabold tracking-tight text-slate-900 sm:text-2xl">
-                배관·고압세척 서비스
-              </h3>
-              <p className="mt-1 text-sm text-slate-600">
-                하수구·배관·배수구 막힘 및 기타 고압세척 현장 해결
-              </p>
-            </div>
-          </Reveal>
-          <RevealGroup stagger={0.08} className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {pipeServices.map((s) => (
-              <RevealItem key={s.ko} variant="up">
-                <Card s={s} cover={s.cat ? covers[s.cat as Cat] : undefined} />
-              </RevealItem>
-            ))}
-          </RevealGroup>
-        </div>
+        <RevealGroup stagger={0.06} className="mt-7 grid grid-cols-3 gap-2.5 sm:mt-12 sm:gap-5">
+          {services.map((s) => (
+            <RevealItem key={s.key} variant="up">
+              <QuoteLink
+                service={s.key}
+                ariaLabel={`${s.name} 견적 문의하기`}
+                className="group block h-full overflow-hidden rounded-xl border border-slate-200 bg-white shadow-[0_10px_35px_rgb(15_23_42/0.07)] transition-all duration-300 hover:-translate-y-1 hover:border-brand-200 hover:shadow-[0_20px_45px_rgb(15_23_42/0.13)] sm:rounded-[1.35rem]"
+              >
+                <div className="relative aspect-[16/10] overflow-hidden bg-brand-100">
+                  <Photo s={s} sizes="(min-width: 1024px) 400px, 33vw" />
+                </div>
+                <div className="border-t-2 border-brand-600 px-2 py-2.5 text-center sm:p-6 sm:text-left">
+                  <h3 className="text-[15px] font-black text-brand-900 sm:text-xl">{s.name}</h3>
+                  <p className="mt-2 hidden min-h-6 text-[15px] leading-6 text-slate-600 sm:block">{s.summary}</p>
+                  <span className="mt-3 hidden items-center gap-1 text-[15px] font-bold text-brand-700 group-hover:underline sm:inline-flex">
+                    견적 문의하기
+                    <ArrowRight aria-hidden className="size-4" strokeWidth={2.25} />
+                  </span>
+                </div>
+              </QuoteLink>
+            </RevealItem>
+          ))}
+        </RevealGroup>
       </Container>
     </section>
   );

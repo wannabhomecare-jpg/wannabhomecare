@@ -1,161 +1,192 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import type { ScrollItem } from "@/lib/live-board-scroll";
-import type { RequestStatus } from "@/types/database";
 import { StatusBadge } from "@/components/ui/StatusBadge";
 import { ScrollTime } from "@/components/ui/ScrollTime";
+import {
+  advanceDemoStatus,
+  hasRecent,
+  isFresh,
+  NEW_BADGE_MS,
+  REFRESH_MS,
+  ROW_INTERVAL_MS,
+  STATUS_INTERVAL_MS,
+  type BoardRow,
+} from "@/lib/live-board";
+import type { QuoteBoardItem } from "@/types/database";
 
 type Props = {
-  initial: ScrollItem[];
+  initial: BoardRow[];
+  /** 미리보기: 예시 행을 쓰고 '예시' 표시를 단다 */
+  demo: boolean;
+  live: boolean;
   rows?: number;
-  intervalMs?: number;
 };
 
-const CATEGORY_KO: Record<string, string> = {
-  leak: "누수",
-  toilet: "변기",
-  sink: "싱크대",
-  heating: "난방",
-  frozen: "동파",
-};
-
-function toCategoryLabel(cat: string | null | undefined): string {
-  if (!cat) return "기타";
-  return CATEGORY_KO[cat] ?? cat;
+function usePrefersReducedMotion() {
+  const [reduced, setReduced] = useState(false);
+  useEffect(() => {
+    const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const update = () => setReduced(mq.matches);
+    update();
+    mq.addEventListener("change", update);
+    return () => mq.removeEventListener("change", update);
+  }, []);
+  return reduced;
 }
 
-const STATUS_FLOW: RequestStatus[] = ["pending", "quote", "active", "done"];
-
-function advanceStatus(s: RequestStatus): RequestStatus {
-  const i = STATUS_FLOW.indexOf(s);
-  return i < STATUS_FLOW.length - 1 ? STATUS_FLOW[i + 1] : s;
-}
-
-export function LiveStatusTableClient({
-  initial,
-  rows = 5,
-  intervalMs = 2_500,
-}: Props) {
+/**
+ * 실시간 접수 목록. 움직임은 기반 그대로:
+ * 2.5초마다 맨 위에 한 줄(NEW 2초), 1.5초마다 한 줄의 상태가 넘어감, 마우스를 올리면 멈춤.
+ * production(demo=false)에서는 실제 시각·상태를 그대로 보여 주고 상태를 넘기지 않는다.
+ */
+export function LiveStatusTableClient({ initial, demo, live: initialLive, rows = 8 }: Props) {
   const pool = useRef(initial);
   const cursor = useRef(rows % Math.max(initial.length, 1));
-  const [visible, setVisible] = useState<ScrollItem[]>(() =>
-    initial.slice(0, rows),
-  );
+  const [visible, setVisible] = useState<BoardRow[]>(() => initial.slice(0, rows));
   const [justAddedId, setJustAddedId] = useState<string | null>(null);
   const [changedRowId, setChangedRowId] = useState<string | null>(null);
   const [paused, setPaused] = useState(false);
+  const [live, setLive] = useState(initialLive);
+  const reduced = usePrefersReducedMotion();
+  const stopped = paused || reduced;
 
-  // Effect 1: 새 row 추가 (intervalMs 간격)
+  // 맨 위에 한 줄
   useEffect(() => {
-    if (paused || pool.current.length === 0) return;
+    if (stopped || pool.current.length <= rows) return;
     const t = setInterval(() => {
       const idx = cursor.current % pool.current.length;
       const candidate = pool.current[idx];
       cursor.current = idx + 1;
-      const fresh: ScrollItem = {
-        ...candidate,
-        id: `${candidate.id}-${Date.now()}`,
-        created_at: new Date().toISOString(),
-        status: "pending",
-        time_variant: "relative",
-      };
+      const fresh: BoardRow = demo
+        ? {
+            ...candidate,
+            id: `${candidate.id}-${Date.now()}`,
+            created_at: new Date().toISOString(),
+            status: "pending",
+            time_variant: "relative",
+          }
+        : { ...candidate, id: `${candidate.id}~${Date.now()}` };
       setJustAddedId(fresh.id);
       setVisible((prev) => [fresh, ...prev].slice(0, rows));
-      setTimeout(() => setJustAddedId(null), 2000);
-    }, intervalMs);
+      setTimeout(() => setJustAddedId(null), NEW_BADGE_MS);
+    }, ROW_INTERVAL_MS);
     return () => clearInterval(t);
-  }, [paused, intervalMs, rows]);
+  }, [stopped, demo, rows]);
 
-  // Effect 2: 기존 row 상태 전진 (1.5초 간격) — 활발한 작업 진행 느낌
+  // 예시 행만 상태를 넘긴다(견적접수 → 상담진행)
   useEffect(() => {
-    if (paused) return;
+    if (!demo || stopped) return;
     const t = setInterval(() => {
       let picked: string | null = null;
       setVisible((prev) => {
-        const candidates = prev.filter((item) => item.status !== "done");
+        const candidates = prev.filter((r) => r.demo && r.status === "pending");
         if (candidates.length === 0) return prev;
-        const pick =
-          candidates[Math.floor(Math.random() * candidates.length)];
+        const pick = candidates[Math.floor(Math.random() * candidates.length)];
         picked = pick.id;
-        return prev.map((item) =>
-          item.id === pick.id
-            ? { ...item, status: advanceStatus(item.status) }
-            : item,
-        );
+        return prev.map((r) => (r.id === pick.id ? { ...r, status: advanceDemoStatus(r.status) } : r));
       });
       if (picked) {
         setChangedRowId(picked);
         setTimeout(() => setChangedRowId(null), 900);
       }
-    }, 1500);
+    }, STATUS_INTERVAL_MS);
     return () => clearInterval(t);
-  }, [paused]);
+  }, [demo, stopped]);
+
+  // production: 60초마다 새 요청을 다시 읽어 맨 위에 올린다
+  useEffect(() => {
+    if (demo) return;
+    const t = setInterval(async () => {
+      try {
+        const res = await fetch("/api/board", { cache: "no-store" });
+        if (!res.ok) return;
+        const items = (await res.json()) as QuoteBoardItem[];
+        const known = new Set(pool.current.map((r) => r.id));
+        const added: BoardRow[] = items
+          .filter((it) => !known.has(it.id))
+          .map((it) => ({ ...it, demo: false, time_variant: "relative" }));
+        if (added.length > 0) {
+          pool.current = [...added, ...pool.current];
+          setVisible((prev) => [...added, ...prev].slice(0, rows));
+        }
+        setLive(hasRecent(pool.current, new Date()));
+      } catch {
+        // 다음 주기에 다시 읽는다
+      }
+    }, REFRESH_MS);
+    return () => clearInterval(t);
+  }, [demo, rows]);
+
+  const now = new Date();
 
   return (
     <div
-      className="flex flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm"
+      className="flex h-full flex-col overflow-hidden bg-white"
       onMouseEnter={() => setPaused(true)}
       onMouseLeave={() => setPaused(false)}
     >
-      {/* 상단 LIVE 바 */}
-      <div className="flex items-center gap-2 border-b border-slate-200 bg-gradient-to-r from-rose-50 via-amber-50 to-rose-50 px-4 py-2.5 sm:px-5">
-        <span aria-hidden className="live-dot text-rose-500" />
-        <span className="live-blink text-xs font-extrabold uppercase tracking-wider text-rose-700">
-          LIVE
-        </span>
-        <span aria-hidden className="text-slate-300">·</span>
-        <span className="text-xs font-semibold text-slate-700 sm:text-sm">
-          지금도 작업 신청이 들어오고 있습니다
-        </span>
+      <div className="flex items-center gap-2.5 border-b border-slate-200 bg-brand-50 px-4 py-3 sm:px-5">
+        {live ? (
+          <>
+            <span aria-hidden className="live-dot text-live" />
+            <span className="live-blink text-sm font-black tracking-wider text-live">LIVE</span>
+            <span className="text-sm font-bold text-brand-900 sm:text-[15px]">지금도 견적 신청이 들어오고 있습니다</span>
+          </>
+        ) : (
+          <span className="text-sm font-bold text-brand-900 sm:text-[15px]">최근 견적 접수</span>
+        )}
+        {demo && (
+          <span className="ml-auto rounded-full border border-brand-600 bg-white px-2.5 py-0.5 text-xs font-bold text-brand-700">
+            예시
+          </span>
+        )}
       </div>
 
-      {/* 행 */}
-      <ul
-        aria-live="polite"
-        className="flex flex-col divide-y divide-slate-100"
-      >
+      <ul aria-label={demo ? "견적 접수 목록(예시)" : "최근 견적 접수 목록"} className="flex flex-col divide-y divide-slate-100">
         {visible.map((item) => {
-          const isNew = item.id === justAddedId;
-          const isChanged = item.id === changedRowId;
+          const showNew = demo ? item.id === justAddedId : isFresh(item.created_at, now);
           return (
             <li
               key={item.id}
-              data-just-added={isNew ? "true" : "false"}
-              data-status-changed={isChanged ? "true" : "false"}
-              className="flex min-h-[58px] shrink-0 items-center sm:min-h-[60px]"
+              data-just-added={item.id === justAddedId ? "true" : "false"}
+              data-status-changed={item.id === changedRowId ? "true" : "false"}
+              className="flex min-h-[58px] shrink-0 items-center lg:min-h-[52px]"
             >
-              <div className="grid w-full grid-cols-[1fr_auto] items-center gap-x-3 gap-y-1 px-4 py-2 sm:grid-cols-[6.5rem_7rem_1fr_1fr_7rem] sm:px-5">
-                <span className="inline-flex w-fit items-center gap-1 rounded-full bg-brand-50 px-2.5 py-0.5 text-xs font-bold text-brand-700 sm:text-sm">
-                  {toCategoryLabel(item.category)}
-                  {isNew && (
-                    <span className="live-new-pill ml-1 inline-flex items-center rounded-sm bg-rose-500 px-1 py-px text-[9px] font-black uppercase tracking-wider text-white">
+              <div className="grid w-full grid-cols-[1fr_auto] items-center gap-x-3 gap-y-1 px-4 py-2 lg:grid-cols-[6rem_4.5rem_2.75rem_1fr_auto] lg:gap-x-2">
+                <span className="inline-flex w-fit items-center gap-1.5">
+                  <span className="rounded-full bg-brand-50 px-2.5 py-0.5 text-xs font-bold whitespace-nowrap text-brand-700 sm:text-[13px] lg:px-2 lg:text-xs">
+                    {item.service_label}
+                  </span>
+                  {showNew && (
+                    <span
+                      className={`${demo ? "live-new-pill " : ""}inline-flex items-center rounded-full bg-live px-1.5 py-px text-[10px] font-black tracking-wider text-white lg:hidden`}
+                    >
                       NEW
                     </span>
                   )}
                 </span>
-                <div className="flex justify-end sm:hidden">
+                <div className="row-span-2 flex justify-end lg:hidden">
                   <StatusBadge status={item.status} />
                 </div>
-                <span className="hidden text-xs font-semibold text-slate-600 sm:block sm:text-sm">
-                  <ScrollTime
-                    date={item.created_at}
-                    variant={item.time_variant}
-                  />
+                <span className="hidden items-center gap-1 text-xs font-medium whitespace-nowrap text-slate-600 lg:inline-flex">
+                  <ScrollTime date={item.created_at} variant={item.time_variant} />
+                  {showNew && (
+                    <span
+                      className={`${demo ? "live-new-pill " : ""}inline-flex items-center rounded-full bg-live px-1.5 py-px text-[10px] font-black tracking-wider text-white`}
+                    >
+                      NEW
+                    </span>
+                  )}
                 </span>
-                <span className="col-span-2 truncate text-sm font-bold text-slate-900 sm:col-span-1">
+                <span className="truncate text-[15px] font-bold text-slate-900 lg:text-sm">
                   {item.masked_name}
-                  <span className="ml-2 text-xs font-normal text-slate-400 sm:hidden">
-                    <ScrollTime
-                      date={item.created_at}
-                      variant={item.time_variant}
-                    />
+                  <span className="ml-2 text-[13px] font-normal text-slate-600 lg:hidden">
+                    <ScrollTime date={item.created_at} variant={item.time_variant} />
                   </span>
                 </span>
-                <span className="hidden truncate text-sm text-slate-500 sm:block">
-                  {item.region ?? "—"}
-                </span>
-                <div className="hidden sm:flex sm:justify-end">
+                <span className="hidden truncate text-xs text-slate-600 lg:block">{item.region}</span>
+                <div className="hidden lg:flex lg:justify-end">
                   <StatusBadge status={item.status} />
                 </div>
               </div>

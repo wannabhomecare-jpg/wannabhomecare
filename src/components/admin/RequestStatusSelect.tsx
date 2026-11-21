@@ -48,7 +48,7 @@ export function RequestStatusSelect({
           </option>
         ))}
       </select>
-      {error && <p className="mt-1 text-xs font-semibold text-red-600">{error}</p>}
+      {error && <p className="mt-1 text-xs font-semibold text-live">{error}</p>}
     </div>
   );
 }

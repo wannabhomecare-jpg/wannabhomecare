@@ -26,7 +26,7 @@ export async function updateRequestStatus(
   if (!STATUS_ORDER.includes(status)) return { ok: false, error: "잘못된 상태" };
 
   const supabase = createSupabaseAdminClient();
-  const { error } = await supabase.from("leak_requests").update({ status }).eq("id", id);
+  const { error } = await supabase.from("quote_requests").update({ status }).eq("id", id);
   if (error) {
     console.error("[admin/requests] status update:", error);
     return { ok: false, error: "상태 변경 실패" };
@@ -42,7 +42,7 @@ export async function updateRequestMemo(id: string, memo: string): Promise<Actio
 
   const supabase = createSupabaseAdminClient();
   const { error } = await supabase
-    .from("leak_requests")
+    .from("quote_requests")
     .update({ admin_memo: memo })
     .eq("id", id);
   if (error) {
@@ -62,7 +62,7 @@ export async function toggleBoardVisibility(
 
   const supabase = createSupabaseAdminClient();
   const { error } = await supabase
-    .from("leak_requests")
+    .from("quote_requests")
     .update({ visible_on_board: visible })
     .eq("id", id);
   if (error) {
@@ -78,10 +78,14 @@ export async function deleteRequest(id: string): Promise<ActionResult> {
   if (!idSchema.safeParse(id).success) return { ok: false, error: "잘못된 ID" };
 
   const supabase = createSupabaseAdminClient();
-  const { error } = await supabase.from("leak_requests").delete().eq("id", id);
+  const { data: row } = await supabase.from("quote_requests").select("image_paths").eq("id", id).maybeSingle();
+  const { error } = await supabase.from("quote_requests").delete().eq("id", id);
   if (error) {
     console.error("[admin/requests] delete:", error);
     return { ok: false, error: "삭제 실패" };
+  }
+  if (row?.image_paths?.length) {
+    await supabase.storage.from("request-images").remove(row.image_paths);
   }
   revalidateAll(id);
   return { ok: true };

@@ -1,59 +1,54 @@
 /**
- * 연락처 정규화 + null fallback.
- *
- * 핵심: 잘못된 값일 때 절대 `href="#"` 같은 무효 링크를 만들지 않는다.
- * 검증 실패면 null을 반환하고, UI는 그 자체로 버튼을 미렌더한다.
- *
- * Phone 정규화는 E.164 표준 (`tel:+82...`) 준수.
+ * 연락처 정리. 값이 없거나 형식이 틀리면 null 을 돌려주고, 화면은 그때의 규칙을 따른다
+ * (미리보기: 버튼은 보이고 누르면 '아직 연결 전입니다' 안내 / 오픈: 버튼을 숨긴다).
  */
 
 export type PhoneInfo = {
-  /** 숫자만 (예: 01012345678) */
+  /** 숫자만 (예: 01083682552) */
   raw: string;
-  /** tel: URI (E.164, 예: +821012345678) */
+  /** tel: 뒤에 붙일 값 (숫자만) */
   tel: string;
-  /** 사용자에게 보일 형식 (예: 010-1234-5678) */
+  /** 화면에 보일 형식 (예: 010-8368-2552) */
   display: string;
 };
 
-export type KakaoInfo = {
-  url: string;
-};
+export type KakaoInfo = { url: string };
 
 export type ContactInfo = {
   phone: PhoneInfo | null;
   kakao: KakaoInfo | null;
 };
 
-/**
- * 한국 모바일 번호를 정규화. 형식 무관하게 숫자만 추출 후 검증.
- *
- * 허용 패턴: 010/011/016/017/018/019 + 7~8자리.
- * - 입력: "010-1234-5678", "010 1234 5678", "01012345678" 모두 OK
- * - 잘못된 형식(빈 값/외국 번호/일반 전화) → null
- *
- * E.164 변환: 앞 `0` 제거 후 `+82` prefix → `+821012345678`
- */
+/** 국내 휴대폰·일반 전화 번호를 숫자만 남겨 정리한다. */
 export function normalizePhone(raw: string | null | undefined): PhoneInfo | null {
   if (!raw) return null;
   const digits = String(raw).replace(/\D/g, "");
-  if (!/^01[016-9]\d{7,8}$/.test(digits)) return null;
-  const tel = `+82${digits.slice(1)}`;
-  const display =
-    digits.length === 10
-      ? `${digits.slice(0, 3)}-${digits.slice(3, 6)}-${digits.slice(6)}`
-      : `${digits.slice(0, 3)}-${digits.slice(3, 7)}-${digits.slice(7)}`;
-  return { raw: digits, tel, display };
+  let display: string | null = null;
+  if (/^01[016-9]\d{7,8}$/.test(digits)) {
+    display =
+      digits.length === 10
+        ? `${digits.slice(0, 3)}-${digits.slice(3, 6)}-${digits.slice(6)}`
+        : `${digits.slice(0, 3)}-${digits.slice(3, 7)}-${digits.slice(7)}`;
+  } else if (/^02\d{7,8}$/.test(digits)) {
+    display =
+      digits.length === 9
+        ? `02-${digits.slice(2, 5)}-${digits.slice(5)}`
+        : `02-${digits.slice(2, 6)}-${digits.slice(6)}`;
+  } else if (/^0[3-9]\d{8,9}$/.test(digits)) {
+    display =
+      digits.length === 10
+        ? `${digits.slice(0, 3)}-${digits.slice(3, 6)}-${digits.slice(6)}`
+        : `${digits.slice(0, 3)}-${digits.slice(3, 7)}-${digits.slice(7)}`;
+  }
+  if (!display) return null;
+  return { raw: digits, tel: digits, display };
 }
 
-/**
- * 카카오 채널 URL 검증. 빈 값·`#`·잘못된 URL은 null.
- * https://pf.kakao.com/_xxx 만 허용 (다른 외부 도메인 거부).
- */
+/** 카카오톡 채널 주소(https://pf.kakao.com/...)만 받는다. */
 export function normalizeKakao(raw: string | null | undefined): KakaoInfo | null {
-  if (!raw || raw === "#") return null;
+  if (!raw) return null;
   const trimmed = String(raw).trim();
-  if (!trimmed) return null;
+  if (!trimmed || trimmed === "#") return null;
   try {
     const u = new URL(trimmed);
     if (u.protocol !== "https:") return null;
@@ -64,23 +59,9 @@ export function normalizeKakao(raw: string | null | undefined): KakaoInfo | null
   }
 }
 
-/**
- * 사이트 대표 연락처.
- * 현재 운영 대표번호는 010-5700-4026으로 고정한다.
- * Vercel의 기존 NEXT_PUBLIC_PHONE 값이 남아 있어도 사이트의 전화 CTA는 이 번호를 사용한다.
- */
-const PRIMARY_PHONE = "01057004026";
-
-/**
- * 환경변수 → 정규화된 연락처 묶음.
- * 신/구 KAKAO 변수명 모두 fallback (`NEXT_PUBLIC_KAKAO_CHANNEL_URL` 우선, 옛 `NEXT_PUBLIC_KAKAO_CHANNEL`도 인식).
- */
 export function getContactInfo(): ContactInfo {
-  const phoneRaw = PRIMARY_PHONE;
-  const kakaoRaw =
-    process.env.NEXT_PUBLIC_KAKAO_CHANNEL_URL ?? process.env.NEXT_PUBLIC_KAKAO_CHANNEL;
   return {
-    phone: normalizePhone(phoneRaw),
-    kakao: normalizeKakao(kakaoRaw),
+    phone: normalizePhone(process.env.NEXT_PUBLIC_PHONE),
+    kakao: normalizeKakao(process.env.NEXT_PUBLIC_KAKAO_CHANNEL_URL),
   };
 }
