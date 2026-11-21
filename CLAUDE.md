@@ -31,10 +31,11 @@
 - 기반은 프리즘이 만든 `leak-site`(노모어누수) 커밋 408ae56 이다. 기반 저장소는 읽기만 한다. 노모어누수의 서비스 프로젝트·도메인·키·검색 등록 값은 건드리지도 다시 쓰지도 않는다.
 - 화면 구성은 고객 작업지시서(2026-11-19)를 반영한 시안 v04(`materials/design/v04/`)를 따른다. 블록의 생김새와 움직임은 노모어누수(nomorenusu.com)의 것을 쓴다. 바꾸는 것은 색·로고·구성·내용이다.
 - 메뉴는 청소 · 에어컨청소 · 컬비청소 · 줄눈 · 탄성코트 · 새집증후군 6개다. 메인에는 첫 화면 · 약속 · 서비스 6칸 · 고객 후기 · 인스타그램 · 30초 무료 견적만 둔다. 네 가지 원칙, 청소범위, 작업사례(전·후 사진), 자주 묻는 질문은 카테고리 화면에 넣는다.
-- 대상 프로젝트는 Vercel `wannab-homecare`, Supabase `wannab-homecare` 하나씩이다. ID 는 `.env.local` 에 고정한다: `VERCEL_TEAM_ID`(Hobby 팀), `VERCEL_PROJECT_ID`, `SUPABASE_ORG_ID`, `SUPABASE_PROJECT_REF`. 이름과 용도는 `.env.example` 에 있다.
+- 저장소는 `wannabhomecare-jpg/wannabhomecare` 다. 대상 프로젝트는 Vercel `wannabhomecare`(사용자가 만들어 이 저장소에 연결했다. main 에 push 하면 배포된다), Supabase `wannabhomecare` 하나씩이다. ID 는 `.env.local` 에 고정한다: `VERCEL_TEAM_ID`(Hobby 팀), `VERCEL_PROJECT_ID`, `SUPABASE_ORG_ID`, `SUPABASE_PROJECT_REF`. 이름과 용도는 `.env.example` 에 있다.
 - 작업 환경은 GitHub Codespace 다. 도구가 없거나 컨테이너가 새로 만들어졌으면 `bash scripts/setup-codespace.sh` 를 먼저 실행한다. `.env.local` 확인은 `node scripts/env-check.mjs`, 토큰·권한·무료 한도 확인은 `node scripts/check-access.mjs` 로 한다(둘 다 값을 출력하지 않는다).
 - 토큰은 환경변수로만 넘긴다. Vercel CLI 는 `VERCEL_TOKEN` 을 읽고, 프로젝트는 `VERCEL_ORG_ID`(= `VERCEL_TEAM_ID` 값)와 `VERCEL_PROJECT_ID` 를 그 명령에 함께 넘겨 고른다. Supabase CLI 는 `npx supabase` 로 쓴다(전역 설치는 지원되지 않는다).
-- 커밋 작성자는 이 Codespace 의 GitHub 사용자 그대로 둔다. Vercel 무료(Hobby) 팀은 Vercel 계정과 연결되지 않은 작성자의 커밋을 배포하지 않는다.
+- 커밋 작성자는 이 Codespace 의 GitHub 사용자(`wannabhomecare-jpg`)로 두고, 이메일은 그 계정의 GitHub noreply 주소를 쓴다. Vercel 무료(Hobby) 팀은 비공개 저장소에서 Vercel 계정과 연결되지 않은 작성자의 커밋을 배포하지 않는다.
+- 이 저장소는 공개(Public)다. 커밋되는 파일과 커밋 정보는 누구나 본다. 비밀값과 개인정보(의뢰인 이름·연락처·주소, 카카오톡 원본 캡처, 계정 이메일, 위치 정보가 남은 사진 원본)는 커밋하지 않는다. 고객이 준 사진은 위치 정보(EXIF)를 지운 뒤 쓴다.
 - 다른 프로젝트·다른 고객의 이름은 커밋되는 파일(리포트 포함)에 적지 않는다. 이 저장소는 나중에 고객에게 넘긴다.
 - `next dev` 가 넣는 Next.js 안내 블록(`nextjs-agent-rules`)은 지우지 않는다. 그 블록이 `CLAUDE.md` 에 들어와도 그대로 둔다.
 - 비밀값 예외: 이 코드는 서버에서 Supabase 서버 키로 DB 를 다루고 비밀번호 하나로 관리자를 보호한다. 그래서 서버 전용 값 3개(Supabase 서버 키, `ADMIN_PASSWORD`, `SESSION_SECRET`)만 Vercel 환경변수에 Sensitive 로 둔다. 공통 규칙의 예외는 이 3개뿐이다. `VERCEL_TOKEN`, `SUPABASE_ACCESS_TOKEN`, DB 비밀번호는 `.env.local` 에만 둔다.

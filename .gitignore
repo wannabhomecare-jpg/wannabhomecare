@@ -1,16 +1,26 @@
 # secrets
 .env*
 !.env.example
+*.pem
 
 # deps / build
 /node_modules
 /.next/
+/out/
+/build
+/coverage
 .vercel
 supabase/.temp/
+*.tsbuildinfo
+next-env.d.ts
 
 # materials (not committed)
 wannab-materials.zip
 /docs/reference/
+
+# test / capture output
+/test-results/
+/playwright-report/
 
 # misc
 *.log
