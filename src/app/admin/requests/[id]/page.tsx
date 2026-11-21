@@ -77,7 +77,6 @@ export default async function AdminRequestDetailPage({ params }: { params: Promi
           <h1 className="mt-1 text-2xl font-extrabold text-slate-900 sm:text-3xl">{row.customer_name}님의 견적</h1>
           <p className="mt-1 text-sm text-slate-600">
             접수 {created.toLocaleString("ko-KR", { timeZone: "Asia/Seoul" })} ({formatScrollTime(created)})
-            {row.is_test && " · 시험 접수"}
           </p>
         </div>
         <ConfirmButton

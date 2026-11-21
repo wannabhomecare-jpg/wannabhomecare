@@ -46,7 +46,6 @@ export type QuoteRequest = {
   status: RequestStatus;
   admin_memo: string | null;
   visible_on_board: boolean;
-  is_test: boolean;
 };
 
 export type QuoteRequestInsert = Omit<
@@ -58,7 +57,6 @@ export type QuoteRequestInsert = Omit<
   | "status"
   | "admin_memo"
   | "visible_on_board"
-  | "is_test"
   | "extra_services"
   | "image_paths"
 > & {
@@ -66,7 +64,6 @@ export type QuoteRequestInsert = Omit<
   image_paths?: string[];
   status?: RequestStatus;
   visible_on_board?: boolean;
-  is_test?: boolean;
 };
 
 /** 공개 목록 뷰(quote_request_board)의 열. 성함 전체·연락처·나머지 주소·요청 내용·사진은 없다. */
