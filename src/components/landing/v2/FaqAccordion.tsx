@@ -61,12 +61,12 @@ export function FaqAccordion({ items, preview = false }: Props) {
             </button>
             {open && (
               <div className="border-t border-brand-100 bg-brand-50/40 px-4 py-4 text-sm leading-relaxed text-slate-700 sm:px-6 sm:py-5 sm:text-base">
-                <p className="flex items-start gap-2">
+                <div className="flex items-start gap-2">
                   <span className="mt-0.5 flex size-6 shrink-0 items-center justify-center rounded-full bg-white text-xs font-black text-brand-600 shadow-sm">
                     A
                   </span>
                   <RichText text={it.answer} className="min-w-0 flex-1" />
-                </p>
+                </div>
               </div>
             )}
           </li>
