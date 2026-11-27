@@ -3,7 +3,7 @@
 import { useActionState, useCallback, useEffect, useMemo, useRef, useState, startTransition } from "react";
 import { ArrowRight, Camera, Check, Phone, X } from "@/components/icons";
 import { KakaoBubble } from "@/components/icons/BrandLogos";
-import { KAKAO_ARIA } from "@/lib/contact";
+import { kakaoAria } from "@/lib/contact";
 import { ContactAction } from "@/components/common/ContactAction";
 import { QUOTE_PRESET_EVENT, QUOTE_PRESET_KEY } from "@/components/common/QuoteLink";
 import { RegionStepPicker } from "./RegionStepPicker";
@@ -282,7 +282,7 @@ export function QuoteWizard({ hints, phone, kakaoUrl, preview }: Props) {
           <div className="mx-auto mt-6 max-w-xs">
             <ContactAction
               href={kakaoUrl}
-              ariaLabel={KAKAO_ARIA}
+              ariaLabel={kakaoAria("카카오톡으로 바로 상담")}
               external
               preview={preview}
               className="flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-kakao text-base font-extrabold text-kakao-ink"
@@ -399,7 +399,7 @@ export function QuoteWizard({ hints, phone, kakaoUrl, preview }: Props) {
         <div className="mt-6 space-y-2.5">
           <ContactAction
             href={kakaoUrl}
-            ariaLabel={KAKAO_ARIA}
+            ariaLabel={kakaoAria("카카오톡으로 바로 상담")}
             external
             preview={preview}
             className="flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-kakao text-base font-extrabold text-kakao-ink"

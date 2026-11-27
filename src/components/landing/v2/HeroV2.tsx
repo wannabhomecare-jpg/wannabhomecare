@@ -3,7 +3,7 @@ import { LiveStatusTableClient } from "./LiveStatusTableClient";
 import { QuoteStartCard } from "./QuoteStartCard";
 import { Phone } from "@/components/icons";
 import { KakaoBubble } from "@/components/icons/BrandLogos";
-import { KAKAO_ARIA } from "@/lib/contact";
+import { kakaoAria } from "@/lib/contact";
 import { ContactAction } from "@/components/common/ContactAction";
 import { BUSINESS } from "@/lib/business";
 import { IS_PREVIEW, SITE_STAGE } from "@/lib/env";
@@ -64,7 +64,7 @@ export async function HeroV2() {
             </ContactAction>
             <ContactAction
               href={kakao?.url ?? null}
-              ariaLabel={KAKAO_ARIA}
+              ariaLabel={kakaoAria("카카오톡으로 빠른 상담")}
               external
               preview={IS_PREVIEW}
               className="flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-kakao text-base font-extrabold text-kakao-ink shadow-md transition hover:brightness-95"

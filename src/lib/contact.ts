@@ -84,3 +84,6 @@ export function getContactInfo(): ContactInfo {
 
 /** 카카오 버튼을 읽어 주는 이름 */
 export const KAKAO_ARIA = "카카오톡 1:1 상담 (새 창)";
+
+/** 보이는 글자로 시작해야 음성 입력·화면 읽기에서 같은 이름으로 찾는다(WCAG 2.5.3). */
+export const kakaoAria = (visible: string) => `${visible} · ${KAKAO_ARIA}`;
