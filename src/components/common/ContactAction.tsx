@@ -47,7 +47,7 @@ export function ContactAction({
       <button
         type="button"
         className={className}
-        aria-label={ariaLabel ? `${ariaLabel} (아직 연결 전입니다)` : undefined}
+        aria-label={ariaLabel ? `${ariaLabel.replace(/\s*\(새 창\)$/, "")} (아직 연결 전입니다)` : undefined}
         onClick={() => {
           setNotice(true);
           if (timer.current) clearTimeout(timer.current);

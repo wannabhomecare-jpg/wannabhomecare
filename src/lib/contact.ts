@@ -12,7 +12,14 @@ export type PhoneInfo = {
   display: string;
 };
 
-export type KakaoInfo = { url: string };
+export type KakaoInfo = {
+  /** 채널 ID (pf.kakao.com/_ 뒤의 영문·숫자) */
+  id: string;
+  /** 채널 홈 주소 https://pf.kakao.com/_<ID> */
+  home: string;
+  /** 1:1 채팅방 주소 https://pf.kakao.com/_<ID>/chat — 버튼은 이 주소를 쓴다 */
+  url: string;
+};
 
 export type ContactInfo = {
   phone: PhoneInfo | null;
@@ -44,19 +51,28 @@ export function normalizePhone(raw: string | null | undefined): PhoneInfo | null
   return { raw: digits, tel: digits, display };
 }
 
-/** 카카오톡 채널 주소(https://pf.kakao.com/...)만 받는다. */
+/**
+ * 카카오톡 채널 주소를 정리한다.
+ * 받는 것: http(s)://pf.kakao.com/_<영문·숫자> (뒤에 /chat, /friend, / 가 붙어도 된다. 쿼리·# 는 버린다)
+ * 그 밖은 null.
+ */
 export function normalizeKakao(raw: string | null | undefined): KakaoInfo | null {
   if (!raw) return null;
   const trimmed = String(raw).trim();
   if (!trimmed || trimmed === "#") return null;
+  let u: URL;
   try {
-    const u = new URL(trimmed);
-    if (u.protocol !== "https:") return null;
-    if (!/^pf\.kakao\.com$/i.test(u.host)) return null;
-    return { url: u.toString() };
+    u = new URL(trimmed);
   } catch {
     return null;
   }
+  if (u.protocol !== "https:" && u.protocol !== "http:") return null;
+  if (u.hostname.toLowerCase() !== "pf.kakao.com" || u.port) return null;
+  const m = /^\/_([A-Za-z0-9]+)(?:\/(?:chat|friend)?)?\/?$/.exec(u.pathname);
+  if (!m) return null;
+  const id = m[1];
+  const home = `https://pf.kakao.com/_${id}`;
+  return { id, home, url: `${home}/chat` };
 }
 
 export function getContactInfo(): ContactInfo {
@@ -65,3 +81,6 @@ export function getContactInfo(): ContactInfo {
     kakao: normalizeKakao(process.env.NEXT_PUBLIC_KAKAO_CHANNEL_URL),
   };
 }
+
+/** 카카오 버튼을 읽어 주는 이름 */
+export const KAKAO_ARIA = "카카오톡 1:1 상담 (새 창)";

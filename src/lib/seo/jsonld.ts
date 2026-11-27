@@ -38,6 +38,6 @@ export function localBusinessJsonLd() {
       addressLocality: "중구",
     },
     areaServed: BUSINESS.serviceAreas.map((name) => ({ "@type": "AdministrativeArea", name })),
-    sameAs: [BUSINESS.instagramUrl],
+    sameAs: [BUSINESS.instagramUrl, ...(BUSINESS.contact.kakao ? [BUSINESS.contact.kakao.home] : [])],
   };
 }

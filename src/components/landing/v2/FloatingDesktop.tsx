@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import { ArrowUp, Phone } from "@/components/icons";
 import { KakaoBubble } from "@/components/icons/BrandLogos";
+import { KAKAO_ARIA } from "@/lib/contact";
 import { ContactAction } from "@/components/common/ContactAction";
 
 /**
@@ -78,6 +79,7 @@ export function FloatingDesktop({
 
       <ContactAction
         href={kakaoUrl}
+        ariaLabel={KAKAO_ARIA}
         external
         preview={preview}
         className="flex w-24 flex-col items-center gap-1 rounded-2xl bg-kakao px-2 py-3 text-kakao-ink shadow-lg hover:brightness-95"

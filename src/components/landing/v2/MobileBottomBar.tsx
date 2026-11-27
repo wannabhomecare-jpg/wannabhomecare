@@ -1,5 +1,6 @@
 import { FileText, Phone } from "@/components/icons";
 import { KakaoBubble } from "@/components/icons/BrandLogos";
+import { KAKAO_ARIA } from "@/lib/contact";
 import { ContactAction } from "@/components/common/ContactAction";
 import { QuoteLink } from "@/components/common/QuoteLink";
 import { BUSINESS } from "@/lib/business";
@@ -33,7 +34,7 @@ export function MobileBottomBar() {
           <Phone aria-hidden className="size-5" strokeWidth={2.25} />
           바로연결
         </ContactAction>
-        <ContactAction href={kakao?.url ?? null} external preview={IS_PREVIEW} className={`${btn} w-full bg-kakao text-kakao-ink`}>
+        <ContactAction href={kakao?.url ?? null} ariaLabel={KAKAO_ARIA} external preview={IS_PREVIEW} className={`${btn} w-full bg-kakao text-kakao-ink`}>
           <KakaoBubble aria-hidden className="size-5" />
           카톡상담
         </ContactAction>

@@ -26,7 +26,7 @@ if (process.env.NEXT_PUBLIC_SITE_STAGE !== "production") {
 }
 // 2) 연락처
 if (!normalizePhone(process.env.NEXT_PUBLIC_PHONE)) fails.push("전화번호(NEXT_PUBLIC_PHONE)가 비어 있거나 형식이 틀립니다.");
-if (!normalizeKakao(process.env.NEXT_PUBLIC_KAKAO_CHANNEL_URL)) fails.push("카카오 채널(NEXT_PUBLIC_KAKAO_CHANNEL_URL)이 비어 있습니다.");
+if (!normalizeKakao(process.env.NEXT_PUBLIC_KAKAO_CHANNEL_URL)) fails.push("카카오 채널(NEXT_PUBLIC_KAKAO_CHANNEL_URL)이 비어 있거나 pf.kakao.com/_<ID> 형식이 아닙니다.");
 // 3) 사진 준비 중 자리표시
 for (const s of DEFAULT_SERVICES) if (!s.image) fails.push(`서비스 카드 '${s.name}' 사진이 '사진 준비 중'입니다.`);
 DEFAULT_HERO_SLIDES.forEach((s, i) => {
