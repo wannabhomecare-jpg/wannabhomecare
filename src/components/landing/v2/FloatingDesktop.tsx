@@ -16,11 +16,14 @@ export function FloatingDesktop({
   kakaoUrl,
   preview,
   showReviews,
+  anchors: customAnchors,
 }: {
   phone: { tel: string; display: string } | null;
   kakaoUrl: string | null;
   preview: boolean;
   showReviews: boolean;
+  /** 카테고리 화면: 그 화면의 블록으로 빠른 이동 */
+  anchors?: { href: string; label: string }[];
 }) {
   const [showTop, setShowTop] = useState(false);
   const [showAside, setShowAside] = useState(false);
@@ -38,7 +41,7 @@ export function FloatingDesktop({
 
   const toTop = useCallback(() => window.scrollTo({ top: 0, behavior: "smooth" }), []);
 
-  const anchors = [
+  const anchors = customAnchors ?? [
     { href: "/#promise", label: "약속" },
     { href: "/#services", label: "서비스" },
     ...(showReviews ? [{ href: "/#reviews", label: "고객후기" }] : []),

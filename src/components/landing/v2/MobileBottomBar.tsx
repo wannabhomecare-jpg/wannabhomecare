@@ -10,7 +10,7 @@ import { IS_PREVIEW } from "@/lib/env";
  * 휴대폰 하단 고정 버튼 3개(고객 요청): 견적문의 · 바로연결 · 카톡상담.
  * 본문 아래에는 이 높이만큼 여백을 둔다(푸터 pb).
  */
-export function MobileBottomBar() {
+export function MobileBottomBar({ service }: { service?: string } = {}) {
   const phone = BUSINESS.contact.phone;
   const kakao = BUSINESS.contact.kakao;
   const btn = "flex h-14 items-center justify-center gap-1.5 rounded-2xl text-[17px] font-extrabold shadow-md";
@@ -22,7 +22,7 @@ export function MobileBottomBar() {
       style={{ paddingBottom: "max(0.625rem, env(safe-area-inset-bottom))" }}
     >
       <div className="grid grid-cols-3 gap-2">
-        <QuoteLink className={`${btn} bg-brand-900 text-white`}>
+        <QuoteLink service={service} className={`${btn} bg-brand-900 text-white`}>
           <FileText aria-hidden className="size-5" strokeWidth={2.25} />
           견적문의
         </QuoteLink>

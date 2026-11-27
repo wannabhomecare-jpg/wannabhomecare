@@ -2,17 +2,18 @@
 
 import { useState } from "react";
 import { ChevronDown } from "@/components/icons";
+import { RichText } from "@/components/category/RichText";
 
-type FaqItem = { question: string; answer: string };
+type FaqItem = { question: string; answer: string; draft?: boolean };
 
-type Props = { items: FaqItem[] };
+type Props = { items: FaqItem[]; preview?: boolean };
 
 /**
- * 메인페이지용 아코디언 — 한 항목만 열림(single open).
+ * 자주 묻는 질문 아코디언 — 한 항목만 열림(single open). 답의 \n 은 줄바꿈, '· ' 줄은 목록.
  *
  * 별도 라이브러리 없이 button + aria-expanded + 조건부 패널.
  */
-export function FaqAccordion({ items }: Props) {
+export function FaqAccordion({ items, preview = false }: Props) {
   const [openIdx, setOpenIdx] = useState<number | null>(0);
 
   return (
@@ -40,6 +41,14 @@ export function FaqAccordion({ items }: Props) {
                 </span>
                 <span className="text-sm font-extrabold leading-snug text-slate-900 sm:text-base">
                   {it.question}
+                  {preview && it.draft && (
+                    <span
+                      data-draft-badge
+                      className="ml-2 inline-flex items-center rounded-full border border-dashed border-brand-500 px-2 py-0.5 align-middle text-[11px] leading-4 font-bold text-brand-700"
+                    >
+                      초안
+                    </span>
+                  )}
                 </span>
               </span>
               <ChevronDown
@@ -56,7 +65,7 @@ export function FaqAccordion({ items }: Props) {
                   <span className="mt-0.5 flex size-6 shrink-0 items-center justify-center rounded-full bg-white text-xs font-black text-brand-600 shadow-sm">
                     A
                   </span>
-                  <span>{it.answer}</span>
+                  <RichText text={it.answer} className="min-w-0 flex-1" />
                 </p>
               </div>
             )}

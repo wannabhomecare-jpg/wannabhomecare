@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { Container } from "@/components/ui/Container";
 import { Header } from "@/components/landing/Header";
 import { Footer } from "@/components/landing/Footer";
@@ -45,7 +46,7 @@ export default function TermsPage() {
 
             <h2>제5조 (개인정보 보호)</h2>
             <p>
-              개인정보는 <a href="/privacy">개인정보처리방침</a>에 따라 다룹니다.
+              개인정보는 <Link href="/privacy">개인정보처리방침</Link>에 따라 다룹니다.
             </p>
 
             <h2>제6조 (분쟁 해결)</h2>

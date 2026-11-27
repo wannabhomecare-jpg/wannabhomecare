@@ -41,3 +41,28 @@ export function localBusinessJsonLd() {
     sameAs: [BUSINESS.instagramUrl, ...(BUSINESS.contact.kakao ? [BUSINESS.contact.kakao.home] : [])],
   };
 }
+
+/** 카테고리 화면: 빵부스러기 + 서비스. 가격·평점은 넣지 않는다 */
+export function categoryJsonLd(c: { slug: string; name: string; seo: { description: string } }) {
+  const url = `${siteConfig.url}/${c.slug}`;
+  return [
+    {
+      "@context": "https://schema.org",
+      "@type": "BreadcrumbList",
+      itemListElement: [
+        { "@type": "ListItem", position: 1, name: BUSINESS.legalName, item: `${siteConfig.url}/` },
+        { "@type": "ListItem", position: 2, name: c.name, item: url },
+      ],
+    },
+    {
+      "@context": "https://schema.org",
+      "@type": "Service",
+      name: c.name,
+      serviceType: c.name,
+      description: c.seo.description,
+      url,
+      provider: { "@type": "HomeAndConstructionBusiness", "@id": `${siteConfig.url}/#business`, name: BUSINESS.legalName },
+      areaServed: BUSINESS.serviceAreas.map((name) => ({ "@type": "AdministrativeArea", name })),
+    },
+  ];
+}

@@ -26,7 +26,7 @@ export function ReviewCaptures({ reviews, label = "고객 후기" }: { reviews: 
               type="button"
               onClick={() => setOpen(r)}
               aria-label={`후기 크게 보기${r.label ? ` — ${r.label}` : ""}`}
-              className="flex flex-1 items-center justify-center p-3 focus-visible:outline-2 focus-visible:outline-offset-[-4px] focus-visible:outline-white sm:p-4"
+              className="flex h-[190px] items-center justify-center p-3 focus-visible:outline-2 focus-visible:outline-offset-[-4px] focus-visible:outline-white sm:h-[230px] sm:p-4"
             >
               <Image
                 src={r.image.url}
@@ -34,7 +34,7 @@ export function ReviewCaptures({ reviews, label = "고객 후기" }: { reviews: 
                 width={r.image.width}
                 height={r.image.height}
                 sizes="(min-width: 640px) 410px, 82vw"
-                className="h-auto w-full rounded-lg"
+                className="h-auto max-h-full w-auto max-w-full rounded-lg"
               />
             </button>
             {r.label && (

@@ -21,6 +21,8 @@
   --color-brand-950: #091932;
 
   /* 카카오톡 버튼·아이콘에만 */
+  /* 탄성코트 컬러 미리보기: 전구색 조명 겹침 */
+  --color-warm-light: #ffb45c;
   --color-kakao: #fee500;
   --color-kakao-ink: #191919;
 
@@ -256,4 +258,12 @@ body {
     opacity: 1;
     transform: none;
   }
+}
+
+/* 탄성코트 컬러 미리보기: 펄 — 은은한 점 무늬 */
+.pearl-texture {
+  background-image:
+    radial-gradient(circle at 20% 30%, rgb(255 255 255 / 0.55) 0.7px, transparent 1.4px),
+    radial-gradient(circle at 70% 65%, rgb(255 255 255 / 0.4) 0.6px, transparent 1.3px);
+  background-size: 7px 7px, 11px 11px;
 }

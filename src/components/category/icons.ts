@@ -1,0 +1,35 @@
+/** 카테고리 문구의 icon 이름 → lucide-react 아이콘. 쓰는 것만 둔다. */
+import {
+  ArrowDownToLine,
+  ClipboardCheck,
+  Droplets,
+  Eraser,
+  Gauge,
+  Hammer,
+  Leaf,
+  MessagesSquare,
+  PaintRoller,
+  Palette,
+  ScanSearch,
+  ShieldCheck,
+  Sparkles,
+  Wind,
+  type LucideIcon,
+} from "lucide-react";
+
+export const CATEGORY_ICONS: Record<string, LucideIcon> = {
+  ArrowDownToLine,
+  ClipboardCheck,
+  Droplets,
+  Eraser,
+  Gauge,
+  Hammer,
+  Leaf,
+  MessagesSquare,
+  PaintRoller,
+  Palette,
+  ScanSearch,
+  ShieldCheck,
+  Sparkles,
+  Wind,
+};

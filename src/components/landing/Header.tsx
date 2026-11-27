@@ -6,15 +6,16 @@ import { ContactAction } from "@/components/common/ContactAction";
 import { BUSINESS } from "@/lib/business";
 import { IS_PREVIEW } from "@/lib/env";
 import { getServices } from "@/lib/site-content";
+import type { ServiceKey } from "@/lib/services";
 import { MobileMenu } from "./MobileMenu";
 
 /**
  * 사이트 헤더 — 상단 띠(PC) + 메인 헤더.
  * 띠: [무료 견적] 365일 상담 가능 · 대표번호
  * 메인: [가로 로고 | 한 줄]   [메뉴 6개] [전화]
- * 카테고리 화면은 Phase 2 에서 만든다. 지금은 메뉴가 모두 서비스 6칸(/#services)으로 간다.
+ * 메뉴 6개는 카테고리 화면(/<slug>)으로 간다. 지금 화면의 메뉴는 강조하고 aria-current="page" 를 단다.
  */
-export async function Header() {
+export async function Header({ current }: { current?: ServiceKey } = {}) {
   const services = await getServices();
   const phone = BUSINESS.contact.phone;
   const tel = phone ? `tel:${phone.tel}` : null;
@@ -51,15 +52,16 @@ export async function Header() {
             {services.map((s) => (
               <li key={s.key}>
                 <Link
-                  href="/#services"
-                  className="rounded-lg px-3 py-2 text-[15px] font-bold whitespace-nowrap text-white transition hover:bg-white/10 xl:px-4"
+                  href={`/${s.slug}`}
+                  aria-current={current === s.key ? "page" : undefined}
+                  className={`rounded-lg px-3 py-2 text-[15px] font-bold whitespace-nowrap transition xl:px-4 ${current === s.key ? "bg-white text-brand-900" : "text-white hover:bg-white/10"}`}
                 >
                   {s.name}
                 </Link>
               </li>
             ))}
           </ul>
-          <MobileMenu items={services.map((s) => ({ key: s.key, name: s.name }))} />
+          <MobileMenu items={services.map((s) => ({ key: s.key, name: s.name, href: `/${s.slug}` }))} current={current} />
           <ContactAction
             href={tel}
             preview={IS_PREVIEW}

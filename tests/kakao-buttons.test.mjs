@@ -22,13 +22,13 @@ test("카카오 버튼은 모두 같은 링크 값·새 창·읽어 주는 이�
       const rel = path.relative(root, f);
       assert.match(tag, /href=\{(kakaoUrl|kakao\?\.url \?\? null)\}/, `${rel}: href`);
       assert.match(tag, /\bexternal\b/, `${rel}: 새 창`);
-      assert.match(tag, /ariaLabel=\{kakaoAria\("[^"]+"\)\}/, `${rel}: aria-label`);
+      assert.match(tag, /ariaLabel=\{kakaoAria\(("[^"]+"|kakaoLabel)\)\}/, `${rel}: aria-label`);
     }
     // 주소를 직접 적은 곳이 없다
     assert.doesNotMatch(src, /pf\.kakao\.com/, path.relative(root, f));
   }
-  // 첫 화면 · 견적 옆 · 견적 완료 · 휴대폰 하단 · PC 오른쪽
-  assert.equal(count, 5);
+  // 첫 화면 · 견적 옆 · 견적 완료 · 휴대폰 하단 · PC 오른쪽 · 카테고리 화면 견적 띠(위·아래 공용)
+  assert.equal(count, 6);
   // kakaoUrl 을 넘기는 곳은 모두 BUSINESS.contact.kakao.url (견적 완료 화면 버튼 포함)
   for (const f of files) {
     for (const m of readFileSync(f, "utf8").matchAll(/kakaoUrl=\{([^}]*)\}/g)) {

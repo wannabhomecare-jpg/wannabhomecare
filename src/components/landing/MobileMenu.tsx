@@ -5,10 +5,10 @@ import { useEffect, useState } from "react";
 import { Menu, X, ChevronRight, FileText } from "@/components/icons";
 import { QuoteLink } from "@/components/common/QuoteLink";
 
-type Item = { key: string; name: string };
+type Item = { key: string; name: string; href: string };
 
 /** 휴대폰 메뉴(서랍). 메뉴 6개와 '견적 문의'. ESC 로 닫힌다. */
-export function MobileMenu({ items }: { items: Item[] }) {
+export function MobileMenu({ items, current }: { items: Item[]; current?: string }) {
   const [open, setOpen] = useState(false);
 
   useEffect(() => {
@@ -58,9 +58,10 @@ export function MobileMenu({ items }: { items: Item[] }) {
                 {items.map((it) => (
                   <li key={it.key}>
                     <Link
-                      href="/#services"
+                      href={it.href}
                       onClick={() => setOpen(false)}
-                      className="flex items-center justify-between rounded-xl px-3 py-3.5 text-base font-bold text-white hover:bg-white/10"
+                      aria-current={current === it.key ? "page" : undefined}
+                      className={`flex items-center justify-between rounded-xl px-3 py-3.5 text-base font-bold ${current === it.key ? "bg-white text-brand-900" : "text-white hover:bg-white/10"}`}
                     >
                       <span>{it.name}</span>
                       <ChevronRight aria-hidden className="size-5 text-brand-300" strokeWidth={2} />

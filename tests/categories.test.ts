@@ -41,3 +41,24 @@ test("초안 목록: 카테고리·항목별로 센다", () => {
   // 에어컨은 '무엇이 다른가요' 1건
   assert.deepEqual(drafts.filter((d) => d.slug === "aircon").map((d) => d.item), ["무엇이 다른가요"]);
 });
+
+test("히어로: backgroundVideo 가 있으면 영상, '@service:' 는 서비스 사진, 없으면 남색 바탕", async () => {
+  const { resolveHeroMedia } = await import("../src/lib/category-media");
+  const services = [
+    { key: "grout" as const, image: "/photos/service-4-grout.webp", alt: "줄눈 사진" },
+    { key: "kirby" as const, image: null, alt: "" },
+  ];
+  const base = CATEGORIES.grout.hero;
+  assert.deepEqual(resolveHeroMedia({ ...base, backgroundVideo: { src: "/real/x.mp4", poster: "/real/x.jpg" } }, services), {
+    type: "video",
+    src: "/real/x.mp4",
+    poster: "/real/x.jpg",
+    kind: "ai",
+  });
+  const img = resolveHeroMedia(base, services);
+  assert.equal(img.type, "image");
+  assert.equal(img.type === "image" && img.src, "/photos/service-4-grout.webp");
+  assert.equal(img.type === "image" && img.alt, "줄눈 사진");
+  assert.deepEqual(resolveHeroMedia(CATEGORIES.kirby.hero, services), { type: "none" });
+  assert.equal(resolveHeroMedia(CATEGORIES.clean.hero, services).type, "image");
+});
