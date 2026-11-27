@@ -114,7 +114,7 @@ export function TestimonialsCarouselClient({
               onClick={() => scrollTo(i)}
               aria-label={`${i + 1}번째로 이동`}
               aria-current={i === index}
-              className="flex h-6 items-center px-1"
+              className="flex h-6 min-w-6 items-center justify-center"
             >
               <span className={`block h-2 rounded-full transition-all ${i === index ? "w-6 bg-brand-600" : "w-2 bg-brand-300"}`} />
             </button>

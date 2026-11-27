@@ -33,7 +33,10 @@ function Card({ w, dark }: { w: WhyCard; dark: boolean }) {
 /** 왜 필요한가요 · 무엇이 다른가요 */
 export function WhyCards({ c }: { c: CategoryContent }) {
   return (
-    <section aria-label="왜 필요한가요 · 무엇이 다른가요" className="bg-white py-12 md:py-20">
+    <section aria-labelledby="why-title" className="bg-white py-12 md:py-20">
+      <h2 id="why-title" className="sr-only">
+        왜 필요한가요 · 무엇이 다른가요
+      </h2>
       <Container className="grid gap-4 md:grid-cols-2 md:gap-6">
         <Reveal variant="up">
           <Card w={c.why.need} dark={false} />
