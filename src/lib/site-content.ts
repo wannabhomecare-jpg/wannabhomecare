@@ -1,7 +1,9 @@
 import { createSupabaseAnonClient } from "@/lib/supabase/anon";
 import { isSupabaseConfigured } from "@/lib/env";
 import { DEFAULT_SERVICES, type ServiceItem } from "@/lib/services";
+import { BEFORE_AFTER_KEY, REVIEWS_KEY, normalizeBeforeAfter, normalizeReviews } from "@/lib/media-items";
 import type {
+  BeforeAfterItem,
   HeroSlideData,
   LiveBoardSettings,
   PromiseSectionData,
@@ -163,7 +165,10 @@ export async function setSiteContent(key: string, value: unknown): Promise<void>
 
 export const getHeroSlides = () => getSiteContent<HeroSlideData[]>("hero_slides", DEFAULT_HERO_SLIDES);
 export const getPromiseSection = () => getSiteContent<PromiseSectionData>("promise_section", DEFAULT_PROMISE);
-export const getReviewCaptures = () => getSiteContent<ReviewCaptureData[]>("review_captures", []);
+export const getReviewCaptures = async (): Promise<ReviewCaptureData[]> =>
+  normalizeReviews(await getSiteContent<unknown>(REVIEWS_KEY, []));
+export const getBeforeAfter = async (): Promise<BeforeAfterItem[]> =>
+  normalizeBeforeAfter(await getSiteContent<unknown>(BEFORE_AFTER_KEY, []));
 export const getLiveBoardSettings = () => getSiteContent<LiveBoardSettings>("live_board", DEFAULT_LIVE_BOARD);
 
 /** 서비스 목록: 기본 목록 + 관리자에서 바꾼 이름·한 줄 */

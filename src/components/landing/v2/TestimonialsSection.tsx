@@ -1,8 +1,8 @@
-import Image from "next/image";
 import { Container } from "@/components/ui/Container";
 import { MessageCircle } from "@/components/icons";
 import { Reveal } from "@/components/ui/Reveal";
 import { TestimonialsCarouselClient } from "./TestimonialsCarouselClient";
+import { ReviewCaptures } from "@/components/category/ReviewCaptures";
 import { IS_PREVIEW } from "@/lib/env";
 import { getPublishedReviews } from "@/lib/visibility";
 
@@ -28,40 +28,23 @@ export async function TestimonialsSection() {
         </Reveal>
 
         <Reveal variant="fade" delay={0.1} className="mt-7 sm:mt-12">
-          <TestimonialsCarouselClient label="고객 후기">
-            {reviews.length > 0
-              ? reviews.map((r) => (
-                  <article key={r.id} className="overflow-hidden rounded-2xl border border-brand-200 bg-white">
-                    <div className="relative aspect-[3/4] bg-brand-100">
-                      <Image
-                        src={r.image}
-                        alt={`${r.service} 고객이 카카오톡으로 보낸 후기 캡처`}
-                        fill
-                        sizes="(min-width: 1024px) 300px, 50vw"
-                        className="object-cover object-top"
-                      />
-                    </div>
-                    <div className="px-4 py-3 sm:px-5 sm:py-4">
-                      <p className="text-[15px] font-bold text-brand-900">
-                        {r.service} · {r.region}
-                      </p>
-                      <p className="mt-0.5 text-[13px] text-slate-600">{r.month}</p>
-                    </div>
-                  </article>
-                ))
-              : [1, 2, 3, 4].map((n) => (
-                  <article key={n} className="overflow-hidden rounded-2xl border border-brand-200 bg-white">
-                    <div className="flex aspect-[3/4] flex-col items-center justify-center gap-2 bg-brand-100 px-3 text-center">
-                      <MessageCircle aria-hidden className="size-8 text-brand-600" strokeWidth={1.75} />
-                      <p className="text-[15px] font-bold text-brand-800">카카오톡 후기 캡처 자리</p>
-                    </div>
-                    <div className="px-4 py-3 sm:px-5 sm:py-4">
-                      <p className="text-[15px] font-bold text-brand-900">[서비스 · 지역]</p>
-                      <p className="mt-0.5 text-[13px] text-slate-600">[작업한 달]</p>
-                    </div>
-                  </article>
-                ))}
-          </TestimonialsCarouselClient>
+          {reviews.length > 0 ? (
+            <ReviewCaptures reviews={reviews} />
+          ) : (
+            <TestimonialsCarouselClient label="고객 후기">
+              {[1, 2, 3, 4].map((n) => (
+                <article key={n} className="overflow-hidden rounded-2xl border border-brand-200 bg-white">
+                  <div className="flex aspect-[3/2] flex-col items-center justify-center gap-2 bg-brand-100 px-3 text-center">
+                    <MessageCircle aria-hidden className="size-8 text-brand-600" strokeWidth={1.75} />
+                    <p className="text-[15px] font-bold text-brand-800">카카오톡 후기 캡처 자리</p>
+                  </div>
+                  <div className="px-4 py-3 sm:px-5 sm:py-4">
+                    <p className="text-[15px] font-bold text-brand-900">[서비스 · 지역]</p>
+                  </div>
+                </article>
+              ))}
+            </TestimonialsCarouselClient>
+          )}
         </Reveal>
       </Container>
     </section>

@@ -1,6 +1,7 @@
 /**
  * DB 표 타입(수기). supabase/migrations 와 맞춘다.
  */
+import type { ServiceKey } from "@/lib/services";
 
 // ============================================================
 // quote_requests — 30초 무료 견적 문의
@@ -139,7 +140,40 @@ export type PromiseSectionData = {
   cards: PromiseCardData[];
 };
 
+/** site-media 버킷에 있는 사진 한 장 */
+export type MediaFile = {
+  /** 공개 주소 */
+  url: string;
+  /** 버킷 안 경로 */
+  path: string;
+  width: number;
+  height: number;
+};
+
+/** 전·후 사진 한 짝(site_content 키: before_after) */
+export type BeforeAfterItem = {
+  id: string;
+  service: ServiceKey;
+  label: string;
+  caption?: string;
+  before: MediaFile;
+  after: MediaFile;
+  order: number;
+  published: boolean;
+};
+
+/** 고객 후기 캡처(site_content 키: review_captures). 이름·프로필은 가린 것만 */
 export type ReviewCaptureData = {
+  id: string;
+  image: MediaFile;
+  label: string;
+  services: ServiceKey[];
+  order: number;
+  published: boolean;
+};
+
+/** Phase 1 의 옛 모양(읽을 때 새 모양으로 바꾼다) */
+export type LegacyReviewCapture = {
   id: string;
   image: string;
   service: string;

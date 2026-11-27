@@ -16,6 +16,11 @@ next-env.d.ts
 
 # materials (not committed)
 wannab-materials.zip
+*.zip
+materials/raw/
+# 보충(phase-1b) 이미지는 materials/photos/ 로 옮겨 쓴다
+/service-3-kirby.png
+/service-5-coating.png
 /docs/reference/
 
 # test / capture output

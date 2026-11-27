@@ -1,6 +1,8 @@
 import { IS_PREVIEW } from "@/lib/env";
 import { getReviewCaptures } from "@/lib/site-content";
 import type { ReviewCaptureData } from "@/types/database";
+import type { ServiceKey } from "@/lib/services";
+import { publishedReviews } from "@/lib/media-items";
 
 /**
  * 후기·인스타그램 블록을 보일지 정한다.
@@ -9,9 +11,8 @@ import type { ReviewCaptureData } from "@/types/database";
  */
 export const INSTAGRAM_CONNECTED = false;
 
-export async function getPublishedReviews(): Promise<ReviewCaptureData[]> {
-  const all = await getReviewCaptures();
-  return all.filter((r) => r.published && r.image);
+export async function getPublishedReviews(service?: ServiceKey): Promise<ReviewCaptureData[]> {
+  return publishedReviews(await getReviewCaptures(), service);
 }
 
 export async function getSectionVisibility() {

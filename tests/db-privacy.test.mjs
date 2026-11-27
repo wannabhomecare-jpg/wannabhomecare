@@ -92,3 +92,29 @@ test("견적 요청 표는 실시간 구독 대상이 아니다", { skip: skip |
   const rows = await res.json();
   assert.equal(rows[0].n, 0);
 });
+
+test("사이트 사진 저장소(site-media): 공개 주소로 열리고, 공개 키로는 목록 보기·올리기·지우기가 안 된다", { skip }, async () => {
+  const png = Buffer.from(
+    "89504e470d0a1a0a0000000d49484452000000010000000108060000001f15c4890000000d49444154789c6360f8cf00000301010018dd8db40000000049454e44ae426082",
+    "hex",
+  );
+  const path = `tests/${Date.now()}.png`;
+  const up = await admin.storage.from("site-media").upload(path, png, { contentType: "image/png" });
+  assert.ifError(up.error);
+  try {
+    const res = await fetch(`${url}/storage/v1/object/public/site-media/${path}`);
+    assert.equal(res.status, 200, "공개 주소로 열려야 한다");
+
+    const list = await anon.storage.from("site-media").list("tests");
+    assert.ok(list.error || (list.data ?? []).length === 0, `목록이 보이면 안 된다 (${(list.data ?? []).length}개)`);
+
+    const anonUp = await anon.storage.from("site-media").upload(`tests/anon-${Date.now()}.png`, png, { contentType: "image/png" });
+    assert.ok(anonUp.error, "공개 키로 올릴 수 없어야 한다");
+
+    const anonRm = await anon.storage.from("site-media").remove([path]);
+    assert.ok(anonRm.error || (anonRm.data ?? []).length === 0, "공개 키로 지울 수 없어야 한다");
+    assert.equal((await fetch(`${url}/storage/v1/object/public/site-media/${path}?t=${Date.now()}`)).status, 200, "지우기 시도 뒤에도 남아 있어야 한다");
+  } finally {
+    await admin.storage.from("site-media").remove([path]);
+  }
+});

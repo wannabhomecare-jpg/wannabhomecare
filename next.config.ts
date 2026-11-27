@@ -1,5 +1,14 @@
 import type { NextConfig } from "next";
 
+// 이 프로젝트 Supabase 의 공개 사진(site-media 버킷)만 이미지 최적화를 허용한다
+const supabaseHost = (() => {
+  try {
+    return process.env.NEXT_PUBLIC_SUPABASE_URL ? new URL(process.env.NEXT_PUBLIC_SUPABASE_URL).hostname : null;
+  } catch {
+    return null;
+  }
+})();
+
 const nextConfig: NextConfig = {
   experimental: {
     serverActions: {
@@ -10,6 +19,9 @@ const nextConfig: NextConfig = {
   images: {
     deviceSizes: [640, 750, 828, 1080, 1200, 1600, 1920],
     formats: ["image/avif", "image/webp"],
+    remotePatterns: supabaseHost
+      ? [{ protocol: "https", hostname: supabaseHost, pathname: "/storage/v1/object/public/site-media/**" }]
+      : [],
   },
   compiler: {
     removeConsole: process.env.NODE_ENV === "production" ? { exclude: ["error", "warn"] } : false,

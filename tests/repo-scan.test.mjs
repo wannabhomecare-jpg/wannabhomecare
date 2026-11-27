@@ -12,7 +12,7 @@ const SELF = "tests/repo-scan.test.mjs";
 const files = execFileSync("git", ["ls-files", "--cached", "--others", "--exclude-standard"], { encoding: "utf8" })
   .split("\n")
   .filter((f) => f && f !== SELF && existsSync(f))
-  .filter((f) => !/\.(png|jpe?g|webp|gif|ico|woff2?|pdf|zip)$/i.test(f));
+  .filter((f) => !/\.(png|jpe?g|webp|gif|ico|woff2?|pdf|zip|mp4|webm)$/i.test(f));
 
 const read = (f) => readFileSync(f, "utf8");
 const under = (prefixes) => files.filter((f) => prefixes.some((p) => f === p || f.startsWith(p)));
@@ -48,7 +48,9 @@ test("기반 사이트 흔적 0건", () => {
 test("업종 문구 0건", () => {
   const words = [j("누", "수"), j("동", "파"), j("해", "빙"), j("난방", "배관"), j("하수", "구"), j("청", "음"), j("열화", "상"), j("긴급", "출동"), j("le", "ak")];
   const re = new RegExp(words.join("|"), "i");
-  assert.deepEqual(hits(under(["src/", "public/", "supabase/", "scripts/", "tests/"]), re), []);
+  // 예외 딱 하나: 에어컨 재조립 점검을 적은 고객 원문
+  const allowed = (h) => h.startsWith("src/content/categories/aircon.ts:") && h.includes(j("냉방 작동·소음·", "누", "수 여부"));
+  assert.deepEqual(hits(under(["src/", "public/", "supabase/", "scripts/", "tests/"]), re).filter((h) => !allowed(h)), []);
 });
 
 test("색: 토큰 밖 색 클래스·16진수 0건", () => {
@@ -56,7 +58,8 @@ test("색: 토큰 밖 색 클래스·16진수 0건", () => {
   const cls = /\b(cyan|sky|blue|indigo|violet|purple|fuchsia|pink|rose|orange|amber|yellow|lime|green|emerald|teal|highlight|accent|red)-\d{2,3}\b/;
   assert.deepEqual(hits(ui, cls), []);
   const tokenFiles = new Set(["src/app/globals.css", "src/lib/theme-tokens.ts"]);
-  const hex = /#[0-9a-fA-F]{6}\b|#[0-9a-fA-F]{3}\b(?![\w-])/;
+  // 3자리는 뒤에 %·글자가 오면 색이 아니다(예: 해시태그 #100%직영팀)
+  const hex = /#[0-9a-fA-F]{6}\b|#[0-9a-fA-F]{3}\b(?![\w%-])/;
   assert.deepEqual(hits(ui.filter((f) => !tokenFiles.has(f)), hex), []);
 });
 

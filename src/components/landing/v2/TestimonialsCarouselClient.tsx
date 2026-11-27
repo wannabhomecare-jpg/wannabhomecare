@@ -9,7 +9,16 @@ const AUTOPLAY_MS = 5000;
  * 가로 넘김(기반 후기 넘김 동작) — 칸 단위로 맞추고 5초마다 한 칸 넘긴다.
  * PC 4칸, 휴대폰 2칸이 한 화면에 보인다. 마우스를 올리면 멈춘다.
  */
-export function TestimonialsCarouselClient({ children, label }: { children: ReactNode; label: string }) {
+export function TestimonialsCarouselClient({
+  children,
+  label,
+  itemClassName = "w-[calc(50%-0.375rem)] sm:w-[calc(50%-0.625rem)] lg:w-[calc(25%-0.9375rem)]",
+}: {
+  children: ReactNode;
+  label: string;
+  /** 카드 한 칸의 너비 */
+  itemClassName?: string;
+}) {
   const items = Children.toArray(children);
   const trackRef = useRef<HTMLDivElement>(null);
   const [index, setIndex] = useState(0);
@@ -18,7 +27,10 @@ export function TestimonialsCarouselClient({ children, label }: { children: Reac
 
   useEffect(() => {
     const update = () => {
-      const perView = window.matchMedia("(min-width: 1024px)").matches ? 4 : 2;
+      // 한 화면에 보이는 칸 수는 실제 너비로 잰다
+      const track = trackRef.current;
+      const card = track?.querySelector<HTMLElement>("[data-card]");
+      const perView = track && card ? Math.max(1, Math.floor((track.clientWidth + 12) / (card.offsetWidth + 12))) : 1;
       setPages(Math.max(1, items.length - perView + 1));
     };
     update();
@@ -65,7 +77,7 @@ export function TestimonialsCarouselClient({ children, label }: { children: Reac
           <div
             key={i}
             data-card
-            className="w-[calc(50%-0.375rem)] shrink-0 snap-start sm:w-[calc(50%-0.625rem)] lg:w-[calc(25%-0.9375rem)]"
+            className={`shrink-0 snap-start ${itemClassName}`}
           >
             {child}
           </div>
