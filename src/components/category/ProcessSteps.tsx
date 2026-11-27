@@ -48,7 +48,7 @@ export function ProcessSteps({ c }: { c: CategoryContent }) {
                       <Image src={g.image.src} alt={g.image.alt} fill sizes="(min-width: 1024px) 230px, 62vw" style={{ objectPosition: g.image.focus }} className="object-cover" />
                     </div>
                     <figcaption className="px-3 py-2.5 text-center text-[15px] font-bold text-brand-900">
-                      <span className="mr-1.5 text-brand-500">{i + 1}</span>
+                      <span className="mr-1.5 text-brand-600">{i + 1}</span>
                       {g.label}
                     </figcaption>
                   </figure>

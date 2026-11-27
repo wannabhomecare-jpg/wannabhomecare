@@ -1,5 +1,5 @@
 /**
- * 화면 점검: 6개 폭의 가로 스크롤·콘솔 에러, 내부 링크, 1280px 메뉴 한 줄, 390px 하단 버튼 3개,
+ * 화면 점검: 6개 폭 × (메인·카테고리 6개·약관 2개·404)의 가로 스크롤·콘솔 에러, 내부 링크, 1280px 메뉴 한 줄, 390px 하단 버튼 3개,
  * 메인에서 뺀 블록이 없는지, 공개 화면 접근성 자동 검사(axe).
  * 실행: BASE_URL=http://localhost:3000 node tests/e2e/qa.mjs
  */
@@ -8,7 +8,8 @@ import AxeBuilder from "@axe-core/playwright";
 
 const BASE = process.env.BASE_URL || "http://localhost:3000";
 const WIDTHS = [360, 390, 768, 1024, 1280, 1440];
-const PAGES = ["/", "/privacy", "/terms", "/없는-주소"];
+const CATEGORY_PAGES = ["/clean", "/aircon", "/kirby", "/grout", "/coating", "/newhome"];
+const PAGES = ["/", ...CATEGORY_PAGES, "/privacy", "/terms", "/없는-주소"];
 const rows = [];
 let failed = false;
 const report = (k, ok, v) => {
@@ -33,7 +34,7 @@ for (const w of WIDTHS) {
     await ctx.close();
   }
 }
-report("6개 폭 × 4화면 가로 스크롤", overflow.length === 0, overflow.length ? overflow.join(", ") : "0건");
+report(`6개 폭 × ${PAGES.length}화면 가로 스크롤`, overflow.length === 0, overflow.length ? overflow.join(", ") : "0건");
 report("콘솔 에러", consoleErrors.length === 0, consoleErrors.length ? consoleErrors.slice(0, 3).join(" / ") : "0건");
 
 // 2) 메인 구성·메뉴·하단 버튼
@@ -94,7 +95,7 @@ report("콘솔 에러", consoleErrors.length === 0, consoleErrors.length ? conso
 // 3) 접근성(axe)
 let contrast = 0;
 let serious = [];
-for (const path of PAGES.slice(0, 3)) {
+for (const path of PAGES.filter((p) => p !== "/없는-주소")) {
   for (const w of [390, 1440]) {
     const ctx = await browser.newContext({ viewport: { width: w, height: 900 }, reducedMotion: "reduce" });
     const p = await ctx.newPage();

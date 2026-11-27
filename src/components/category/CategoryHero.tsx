@@ -37,7 +37,7 @@ export function CategoryHero({ c, services }: { c: CategoryContent; services: Se
             {mediaKindLabel(media.kind)}
           </span>
           {c.hero.videos.length > 0 && (
-            <div className="absolute right-3 bottom-3 sm:right-5 sm:bottom-5">
+            <div className="absolute right-3 bottom-3 z-10 sm:right-5 sm:bottom-5">
               <HeroVideos videos={c.hero.videos} />
             </div>
           )}

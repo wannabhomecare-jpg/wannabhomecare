@@ -25,26 +25,27 @@ export function FaqAccordion({ items, preview = false }: Props) {
             key={it.question}
             className={`overflow-hidden rounded-2xl border bg-white transition-shadow ${
               open
-                ? "border-brand-200 shadow-md shadow-brand-950/5"
+                ? "border-brand-200 shadow-brand-950/5 shadow-md"
                 : "border-slate-200 shadow-sm hover:border-slate-300"
             }`}
           >
             <button
               type="button"
               aria-expanded={open}
+              aria-controls={`faq-a-${i}`}
               onClick={() => setOpenIdx(open ? null : i)}
               className="flex w-full items-center justify-between gap-3 px-4 py-4 text-left transition hover:bg-slate-50 sm:px-6 sm:py-5"
             >
               <span className="flex items-center gap-3">
-                <span className="flex size-7 shrink-0 items-center justify-center rounded-full bg-brand-50 text-xs font-black text-brand-700 sm:size-8">
+                <span className="bg-brand-50 text-brand-700 flex size-7 shrink-0 items-center justify-center rounded-full text-xs font-black sm:size-8">
                   Q
                 </span>
-                <span className="text-sm font-extrabold leading-snug text-slate-900 sm:text-base">
+                <span className="text-sm leading-snug font-extrabold text-slate-900 sm:text-base">
                   {it.question}
                   {preview && it.draft && (
                     <span
                       data-draft-badge
-                      className="ml-2 inline-flex items-center rounded-full border border-dashed border-brand-500 px-2 py-0.5 align-middle text-[11px] leading-4 font-bold text-brand-700"
+                      className="border-brand-500 text-brand-700 ml-2 inline-flex items-center rounded-full border border-dashed px-2 py-0.5 align-middle text-[11px] leading-4 font-bold"
                     >
                       초안
                     </span>
@@ -59,16 +60,18 @@ export function FaqAccordion({ items, preview = false }: Props) {
                 strokeWidth={2.25}
               />
             </button>
-            {open && (
-              <div className="border-t border-brand-100 bg-brand-50/40 px-4 py-4 text-sm leading-relaxed text-slate-700 sm:px-6 sm:py-5 sm:text-base">
-                <div className="flex items-start gap-2">
-                  <span className="mt-0.5 flex size-6 shrink-0 items-center justify-center rounded-full bg-white text-xs font-black text-brand-600 shadow-sm">
-                    A
-                  </span>
-                  <RichText text={it.answer} className="min-w-0 flex-1" />
-                </div>
+            <div
+              id={`faq-a-${i}`}
+              hidden={!open}
+              className="border-brand-100 bg-brand-50/40 border-t px-4 py-4 text-sm leading-relaxed text-slate-700 sm:px-6 sm:py-5 sm:text-base"
+            >
+              <div className="flex items-start gap-2">
+                <span className="text-brand-600 mt-0.5 flex size-6 shrink-0 items-center justify-center rounded-full bg-white text-xs font-black shadow-sm">
+                  A
+                </span>
+                <RichText text={it.answer} className="min-w-0 flex-1" />
               </div>
-            )}
+            </div>
           </li>
         );
       })}

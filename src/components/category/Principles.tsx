@@ -46,7 +46,7 @@ export function Principles({ c }: { c: CategoryContent }) {
                   </div>
                   <div className="flex-1 p-5 sm:p-6">
                     <h3 className="text-[17px] leading-snug font-black text-brand-900 sm:text-lg">
-                      {p.numbered && <span className="mr-2 text-brand-500">{String(i + 1).padStart(2, "0")}</span>}
+                      {p.numbered && <span className="mr-2 text-brand-600">{String(i + 1).padStart(2, "0")}</span>}
                       {it.title}
                       <DraftBadge draft={it.draft} />
                     </h3>
