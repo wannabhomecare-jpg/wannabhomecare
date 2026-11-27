@@ -15,7 +15,7 @@ import {
   Sparkles,
   Wind,
   type LucideIcon,
-} from "lucide-react";
+} from "@/components/icons";
 
 export const CATEGORY_ICONS: Record<string, LucideIcon> = {
   ArrowDownToLine,

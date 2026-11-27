@@ -8,7 +8,7 @@ export const MAX_EDGE = 1600;
 export const MAX_TOTAL_BYTES = 4 * 1024 * 1024;
 export const MAX_FILES = 3;
 
-async function loadBitmap(file: File): Promise<ImageBitmap | HTMLImageElement> {
+export async function loadBitmap(file: File): Promise<ImageBitmap | HTMLImageElement> {
   if ("createImageBitmap" in window) {
     try {
       return await createImageBitmap(file, { imageOrientation: "from-image" });

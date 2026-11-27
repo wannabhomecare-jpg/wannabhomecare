@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import { useCallback, useState } from "react";
-import { Play } from "lucide-react";
+import { Play } from "@/components/icons";
 import { Dialog } from "@/components/ui/Dialog";
 import type { CategoryVideo } from "@/content/categories/types";
 

@@ -4,7 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState, type ReactNode } from "react";
-import { Activity, FileText, LayoutDashboard, LogOut, Menu, Settings, X, Inbox } from "@/components/icons";
+import { Activity, FileText, LayoutDashboard, LogOut, Menu, Settings, X, Inbox, ImageIcon, MessageCircle } from "@/components/icons";
 
 type NavItem = { href: string; label: string; group?: string; icon: ReactNode };
 
@@ -14,6 +14,8 @@ const NAV: NavItem[] = [
   { href: "/admin/live-board", label: "실시간 현황판", group: "고객 관리", icon: <Activity size={17} /> },
   { href: "/admin/hero", label: "첫 화면(히어로)", group: "사이트 설정", icon: <Settings size={17} /> },
   { href: "/admin/content", label: "약속 · 서비스", group: "사이트 설정", icon: <FileText size={17} /> },
+  { href: "/admin/before-after", label: "전·후 사진", group: "사이트 설정", icon: <ImageIcon size={17} /> },
+  { href: "/admin/reviews", label: "고객 후기", group: "사이트 설정", icon: <MessageCircle size={17} /> },
 ];
 
 function isActive(pathname: string, href: string): boolean {

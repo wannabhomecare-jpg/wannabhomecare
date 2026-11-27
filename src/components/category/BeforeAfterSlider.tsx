@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import { useCallback, useRef, useState } from "react";
-import { ChevronsLeftRight } from "lucide-react";
+import { ChevronsLeftRight } from "@/components/icons";
 import type { BeforeAfterItem } from "@/types/database";
 
 /**
