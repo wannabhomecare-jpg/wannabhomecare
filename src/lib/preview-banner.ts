@@ -11,3 +11,6 @@ export function previewBannerText({
   );
   return `미리보기 · 접수 목록은 예시이고, ${pending.join("과 ")}는 준비 중입니다`;
 }
+
+/** 카테고리 화면에 초안이 남아 있을 때 띠에 더하는 한 줄 */
+export const DRAFT_BANNER_LINE = "카테고리 화면의 '초안' 표시 문구는 대표님 확인 후 바꿉니다.";

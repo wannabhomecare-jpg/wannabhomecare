@@ -1,6 +1,7 @@
 import { siteConfig } from "@/lib/env";
 import { BUSINESS } from "@/lib/business";
 import { DEFAULT_SERVICES } from "@/lib/services";
+import { CATEGORIES } from "@/content/categories";
 
 export const dynamic = "force-static";
 
@@ -15,6 +16,7 @@ export function GET() {
     "",
     "## 주요 페이지",
     `- [홈](${siteConfig.url}/)`,
+    ...Object.values(CATEGORIES).map((c) => `- [${c.name}](${siteConfig.url}/${c.slug}): ${c.seo.description}`),
     `- [30초 무료 견적 문의](${siteConfig.url}/#quote)`,
     `- [개인정보처리방침](${siteConfig.url}/privacy)`,
     `- [이용약관](${siteConfig.url}/terms)`,
